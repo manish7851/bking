@@ -1,0 +1,158 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+}
+
+h1, h3 {
+    text-align: center;
+    color: #333;
+}
+
+.container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+form input[type="text"] {
+    padding: 10px;
+    margin: 5px 0;
+    width: 50%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+form button {
+    padding: 10px 20px;
+    margin-top: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #45a049;
+}
+
+table {
+
+    /* margin-top: 250px;
+    margin-left: 20px; */
+    border-collapse: collapse;
+    background-color: white;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+    color: #333;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+p {
+    text-align: center;
+    color: green;
+    font-weight: bold;
+}
+
+
+/* ===== Modal Overlay ===== */
+#confirmModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ===== Modal Box ===== */
+#confirmModal > div {
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    width: 300px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+#confirmModal p {
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* ===== Modal Buttons ===== */
+#confirmModal button {
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#confirmModal button:first-of-type {
+    background-color: #2ed573;
+    color: white;
+}
+
+#confirmModal button:last-of-type {
+    background-color: #ff4757;
+    color: white;
+}
+
+/* ===== Add Bus Form Styling ===== */
+#busForm {
+    margin-top: 20px;
+}
+
+#busForm input {
+    display: block;
+    width: 300px;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#busForm button[type="submit"] {
+    background-color: #1e90ff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#busForm button[type="submit"]:hover {
+    background-color: #1c7ed6;
+}
+

@@ -1,0 +1,471 @@
+<?php
+    namespace App\Http\Controllers;
+    use App\Models\Booking;
+    use App\Models\Customer;
+    use App\Models\Route;
+    use App\Models\Bus;
+    use Illuminate\Http\Request;
+    use Illuminate\Support\Facades\Log;
+    use App\Services\ESewaPaymentService;
+    use Illuminate\Support\Facades\Auth;
+
+    class BookingController extends Controller
+    {        public function index()
+        {
+            try {
+                // Show ALL bookings, regardless of payment method or status
+                $bookings = Booking::with(['customer', 'route.bus'])->orderBy('created_at', 'desc')->get();
+                $customers = Customer::all();
+                $routes = Route::all();
+                return view('booking.booking_page', compact('bookings', 'customers', 'routes'));
+            } catch (\Exception $e) {
+                return $this->handleBookingError($e, 'index');
+            }
+        }
+
+        public function create(Request $request)
+        {
+            try {
+                $route = Route::with('bus')->findOrFail($request->route_id);
+
+                $booked_seats = Booking::where('route_id', $request->route_id)
+                    ->whereIn('status', ['Booked', 'confirmed'])
+                    ->where(function ($query) {
+                        $query->where('payment_status', 'completed')
+                            ->orWhere('payment_method', 'cash');
+                    })
+                    ->pluck('seat')
+                    ->toArray();
+
+                $customer = null;
+                $isLoggedIn = false;
+                if (session('customer_id')) {
+                    $customer = Customer::findOrFail(session('customer_id'));
+                    $isLoggedIn = true;
+                }
+
+                return view('booking.create', compact('route', 'booked_seats', 'customer', 'isLoggedIn'));
+            } catch (\Exception $e) {
+                Log::error('Booking create error: ' . $e->getMessage());
+                return back()->with('error', 'Unable to create booking.');
+            }
+        }
+
+        private function handleBookingError(\Exception $e, string $context, $request = null)
+        {
+            $errorId = uniqid('booking_');
+            $logContext = [
+                'error_id' => $errorId,
+                'context' => $context,
+                'trace' => $e->getTraceAsString()
+            ];
+
+            if ($request) {
+                $logContext['request_data'] = $request->all();
+            }
+
+            Log::error("Booking error ({$errorId}): " . $e->getMessage(), $logContext);
+
+            if ($request && $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'error_id' => $errorId,
+                    'message' => config('app.debug') ? $e->getMessage() : 'An error occurred while processing your booking.'
+                ], 500);
+            }
+
+            return back()->with('error', 'An error occurred while processing your booking. Reference: ' . $errorId);
+        }
+
+        public function store(Request $request)
+        {
+            try {
+                // Only require session for user self-booking (frontend), not for admin/staff modal bookings
+                if (!session('customer_id') && !($request->has('customer_id') && !empty($request->customer_id))) {
+                    return response()->json([
+                        'success' => false,
+                        'redirect_to_login' => true,
+                        'message' => 'Please login to complete your booking',
+                        'login_url' => route('userlogin') . '?redirect_after_login=' . urlencode(route('bookings.create', ['route_id' => $request->route_id]))
+                    ], 401);
+                }
+
+                // Handle both 'selected_seat' and 'seat' field names
+                $seatValue = $request->input('selected_seat') ?: $request->input('seat');
+                if (!$seatValue) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Please select a seat before booking.'
+                    ], 422);
+                }
+
+                // Patch: If payment_method is missing, default to 'esewa' for admin/staff bookings
+                $requestPaymentMethod = $request->input('payment_method');
+                if (!$requestPaymentMethod) {
+                    $request->merge(['payment_method' => 'esewa']);
+                }
+
+                $validated = $request->validate([
+                    'route_id' => 'required|exists:routes,id',
+                    'customer_id' => 'required|exists:customers,id',
+                    'price' => 'required|numeric',
+                    'payment_method' => 'required|in:cash,esewa,khalti'
+                ]);
+
+                // Add the seat value to validated data
+                $validated['selected_seat'] = $seatValue;
+
+                $route = Route::with('bus')->findOrFail($validated['route_id']);
+                $customer = Customer::findOrFail($validated['customer_id']);
+
+                $existingBooking = Booking::where('route_id', $validated['route_id'])
+                    ->where('seat', $validated['selected_seat'])
+                    ->whereIn('status', ['Booked', 'confirmed'])
+                    ->whereIn('payment_status', ['pending', 'completed'])
+                    ->first();
+
+                if ($existingBooking) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This seat has already been booked. Please select another seat.'
+                    ], 400);
+                }
+
+                $payment_method = $validated['payment_method'];
+
+                $booking = new Booking();
+                $booking->route_id = $validated['route_id'];
+                $booking->customer_id = $validated['customer_id'];
+                $booking->seat = $validated['selected_seat'];
+                $booking->price = $validated['price'];
+                $booking->status = 'Booked';
+                $booking->payment_status = $payment_method === 'cash' ? 'completed' : 'pending';
+                $booking->payment_method = $payment_method;
+                $booking->contact_number = $customer->customer_contact;
+                $booking->bus_id = $route->bus->id;
+                $booking->bus_name = $route->bus->bus_name;
+                $booking->bus_number = $route->bus->bus_number;
+                $booking->source = $route->source;
+                $booking->destination = $route->destination;
+                $booking->user_id = null;
+                $booking->save();
+
+                session(['current_booking' => $booking]);
+
+                if ($payment_method === 'esewa') {
+                    $esewaService = new ESewaPaymentService();
+                    $response = $esewaService->initiatePayment($validated['price'], $booking->id);
+
+                    if ($response['success']) {
+                        return response()->json([
+                            'success' => true,
+                            'redirect_url' => $response['redirect_url']
+                        ]);
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Payment initiation failed. Please try again.'
+                        ], 400);
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => route('booking.confirmation', ['id' => $booking->id])
+                ]);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                // Return validation errors as JSON
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->validator->errors()->first() ?? 'Validation failed. Please check your input.'
+                ], 422);
+            } catch (\Exception $e) {
+                // Log full exception for debugging
+                Log::error('Booking error: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString(),
+                    'request_data' => $request->all(),
+                    'validated_data' => isset($validated) ? $validated : null,
+                    'route' => isset($route) ? $route : null,
+                    'customer' => isset($customer) ? $customer : null,
+                ]);
+                // Show detailed error in debug mode, generic otherwise
+                $message = config('app.debug') ? $e->getMessage() : 'Unable to process booking. Please try again.';
+                return response()->json([
+                    'success' => false,
+                    'message' => $message
+                ], 500);
+            }
+        }
+
+        public function checkSeatAvailability(Request $request)
+        {
+            try {
+                $request->validate([
+                    'route_id' => 'required|exists:routes,id',
+                    'seat' => 'required|string'
+                ]);
+
+                $isBooked = Booking::where('route_id', $request->route_id)
+                    ->where('seat', $request->seat)
+                    ->whereIn('status', ['Booked', 'confirmed'])
+                    ->where(function ($query) {
+                        $query->where('payment_status', 'completed')
+                            ->orWhere('payment_method', 'cash');
+                    })
+                    ->exists();
+
+                return response()->json([
+                    'available' => !$isBooked,
+                    'seat' => $request->seat,
+                    'route_id' => $request->route_id
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Seat availability check error: ' . $e->getMessage());
+                return response()->json([
+                    'available' => false,
+                    'message' => 'Error checking seat availability'
+                ], 500);
+            }
+        }
+
+        public function fetchRoutes(Request $request)
+        {
+            try {
+                $query = \App\Models\Route::with('bus');
+                if ($request->filled('source')) {
+                    $query->where('source', 'like', '%' . $request->source . '%');
+                }
+                if ($request->filled('destination')) {
+                    $query->where('destination', 'like', '%' . $request->destination . '%');
+                }
+                if ($request->filled('date')) {
+                    // Optionally filter by date if your model supports it
+                }            $routes = $query->get();
+                // If searching, redirect to booking.create with the first found route
+                if ($routes->count() === 1) {
+                    return redirect()->route('bookings.create', ['route_id' => $routes->first()->id]);
+                }
+                // Otherwise, show the search page with results
+                return view('users.userbooking', ['routes' => $routes]);
+            } catch (\Exception $e) {
+                Log::error('Fetch routes error: ' . $e->getMessage());
+                return back()->with('error', 'Unable to fetch routes');
+            }
+        }
+
+        public function confirmation($id)
+        {
+            try {
+                $booking = Booking::with(['route.bus', 'customer'])->findOrFail($id);
+
+                if (!session('customer_id') || $booking->customer_id != session('customer_id')) {
+                    return redirect()->route('userlogin')->with('error', 'Access denied.');
+                }
+
+                return view('booking.confirmation', compact('booking'));
+            } catch (\Exception $e) {
+                Log::error('Booking confirmation error: ' . $e->getMessage());
+                return back()->with('error', 'Unable to load booking confirmation.');
+            }
+        }
+
+        public function bookingSuccess($id)
+        {
+            try {
+                $booking = Booking::with(['route.bus', 'customer'])->findOrFail($id);
+
+                if (!session('customer_id') || $booking->customer_id !== session('customer_id')) {
+                    return redirect()->route('userlogin')->with('error', 'Access denied.');
+                }
+
+                return view('booking.success', compact('booking'));
+            } catch (\Exception $e) {
+                Log::error('Booking success error: ' . $e->getMessage());
+                return back()->with('error', 'Unable to load booking success page.');
+            }
+        }
+
+        public function destroy($id)
+        {
+            try {
+                $booking = Booking::findOrFail($id);
+
+                if (Auth::check()) {
+                    $booking->delete();
+                    return redirect()->route('bookings_page')->with('success', 'Booking deleted successfully.');
+                } elseif (session('customer_id') && $booking->customer_id === session('customer_id')) {
+                    if ($booking->status === 'pending' || $booking->status === 'cancelled') {
+                        $booking->delete();
+                        return redirect()->route('userdashboard')->with('success', 'Booking cancelled successfully.');
+                    } else {
+                        return back()->with('error', 'Cannot cancel a confirmed booking.');
+                    }
+                } else {
+                    return back()->with('error', 'Unauthorized access.');
+                }
+            } catch (\Exception $e) {
+                Log::error('Booking deletion error: ' . $e->getMessage());
+                return back()->with('error', 'Unable to delete booking.');
+            }
+        }
+
+        public function showUserTickets()
+        {
+            if (!session('customer_id')) {
+                return redirect()->route('userlogin')
+                    ->with('error', 'Please log in to view your tickets.');
+            }
+
+            $bookings = Booking::where('customer_id', session('customer_id'))
+                ->where('payment_status', 'completed')
+                ->orderBy('created_at', 'desc')
+                ->with(['route.bus'])
+                ->get();
+
+            return view('userdashboard.ticket_history', compact('bookings'));
+        }
+
+        public function userBookings(Request $request)
+        {
+            if (!session('customer_id')) {
+                return redirect()->route('userlogin')
+                    ->with('error', 'Please login to view your bookings')
+                    ->with('redirect_after_login', url()->current());
+            }
+
+            $bookings = Booking::where('customer_id', session('customer_id'))
+                ->where('payment_status', 'completed')
+                ->orderBy('created_at', 'desc')
+                ->with(['route.bus'])
+                ->get();
+
+            return view('users.userbookings', compact('bookings'));
+        }
+
+        public function usersBookings(Request $request)
+        {
+            if (!session('customer_id')) {
+                return redirect()->route('userlogin')
+                    ->with('error', 'Please login to view your bookings')
+                    ->with('redirect_after_login', url()->current());
+            }
+
+            $bookings = Booking::where('customer_id', session('customer_id'))
+                ->where('payment_status', 'completed')
+                ->orderBy('created_at', 'desc')
+                ->with(['route.bus'])
+                ->get();
+
+            return view('users.userbookings', compact('bookings'));
+        }
+
+        public function update(Request $request, $id)
+        {
+            try {
+                $booking = Booking::findOrFail($id);
+                $validated = $request->validate([
+                    'customer_id' => 'required|exists:customers,id',
+                    'route_id' => 'required|exists:routes,id',
+                    'bus_id' => 'required|exists:buses,id',
+                    'bus_number' => 'required',
+                    'seat' => 'required',
+                    'price' => 'required|numeric',
+                    'payment_status' => 'required|in:pending,completed,failed',
+                    'payment_method' => 'required|in:cash,esewa,khalti'
+                ]);
+
+                // Check seat availability (skip if it's the same seat)
+                if ($booking->seat !== $validated['seat']) {
+                    $seatTaken = Booking::where('route_id', $validated['route_id'])
+                        ->where('seat', $validated['seat'])
+                        ->where('id', '!=', $id)
+                        ->whereIn('status', ['Booked', 'confirmed'])
+                        ->where(function ($q) {
+                            $q->where('payment_status', 'completed')
+                                ->orWhere('payment_method', 'cash');
+                        })->exists();
+
+                    if ($seatTaken) {
+                        throw new \Illuminate\Validation\ValidationException(
+                            validator([], []),
+                            response()->json(['message' => 'This seat is already booked.'], 422)
+                        );
+                    }
+                }
+
+                $booking->update($validated);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Booking updated successfully!'
+                ]);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->validator->errors()->first() ?? 'Validation failed.'
+                ], 422);
+            } catch (\Exception $e) {
+                Log::error('Booking update error: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update booking.'
+                ], 500);
+            }
+        }
+
+        public function edit(Request $request, $id)
+        {
+            try {
+                $booking = Booking::with(['customer', 'route.bus'])->find($id);
+                if (!$booking) {
+                    Log::warning('Edit attempted for non-existent booking', [
+                        'booking_id' => $id,
+                        'user_id' => Auth::id() ?? session('customer_id'),
+                        'request_data' => $request->all()
+                    ]);
+                    $errorMsg = 'The booking you are trying to edit was not found. It may have been deleted or the link is invalid.';
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $errorMsg
+                        ], 404);
+                    }
+                    return back()->with('error', $errorMsg);
+                }
+                if ($request->ajax()) {
+                    $customerData = null;
+                    if ($booking->customer) {
+                        $customerData = [
+                            'customer_address' => $booking->customer->customer_address ?? '',
+                            'customer_contact' => $booking->customer->customer_contact ?? '',
+                        ];
+                    }
+                    return response()->json([
+                        'id' => $booking->id,
+                        'customer_id' => $booking->customer_id,
+                        'bus_id' => $booking->bus_id,
+                        'bus_number' => $booking->bus_number,
+                        'route_id' => $booking->route_id,
+                        'seat' => $booking->seat,
+                        'price' => $booking->price,
+                        'payment_status' => $booking->payment_status,
+                        'payment_method' => $booking->payment_method,
+                        'customer' => $customerData,
+                    ]);
+                }
+                $customers = Customer::all();
+                $routes = Route::all();
+                $buses = Bus::all();
+                return view('booking.edit', compact('booking', 'customers', 'routes', 'buses'));
+            } catch (\Exception $e) {
+                Log::error('Booking edit error: ' . $e->getMessage());
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to load booking details.'
+                    ], 500);
+                }
+                return back()->with('error', 'Unable to load booking details.');
+            }
+        }
+    }
