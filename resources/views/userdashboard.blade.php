@@ -66,8 +66,8 @@
                 <p class="mb-1"><strong>Route:</strong> {{ $booking->source }} → {{ $booking->destination }}</p>
                 <p class="mb-1"><strong>Seat:</strong> <span class="badge bg-primary">{{ $booking->seat }}</span></p>
                 <p class="mb-1"><strong>Price:</strong> Rs. {{ number_format($booking->price, 2) }}</p>
-                <p class="mb-1"><strong>Status:</strong> <span class="badge {{ $booking->status_badge_class }}"><i class="{{ $booking->status_icon }} me-1"></i>{{ $booking->status }}</span></p>
-                <p class="mb-1"><strong>Booked At:</strong> {{ $booking->created_at->format('Y-m-d H:i') }}</p>
+                <p class="mb-1"><strong>Payment Status:</strong> <span class="badge {{ $booking->status_badge_class }}"><i class="{{ $booking->status_icon }} me-1"></i>{{ $booking->status }}</span></p>
+                <p class="mb-1"><strong>Booked At:</strong> {{ $booking->created_at->format('d M Y, h:i A') }}</p>
                 <a href="{{ route('booking.download', ['id' => $booking->id]) }}" class="btn btn-outline-success mt-2">
                     <i class="fas fa-download me-1"></i>Download Ticket
                 </a>
@@ -102,7 +102,7 @@
                             <td><span class="badge bg-primary">{{ $b->seat }}</span></td>
                             <td>Rs. {{ number_format($b->price, 2) }}</td>
                             <td><span class="badge bg-success">Paid</span></td>
-                            <td>{{ $b->created_at->format('Y-m-d H:i') }}</td>
+                            <td>{{ $b->created_at->format('d M Y, h:i A') }}</td>
                             <td>
                                 <a href="{{ route('booking.download', ['id' => $b->id]) }}" class="btn btn-sm btn-outline-success">
                                     <i class="fas fa-download"></i>

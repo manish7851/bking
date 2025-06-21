@@ -48,4 +48,10 @@ return [
         'test_mode' => env('KHALTI_TEST_MODE', true),
     ],
 
+    'esewa' => [
+        'merchant_id' => env('ESEWA_MERCHANT_ID', 'EPAYTEST'),
+        'url' => env('ESEWA_URL', 'https://rc.esewa.com.np/epay/main'),
+        'verification_url' => env('ESEWA_VERIFICATION_URL', 'https://rc.esewa.com.np/epay/transrec'),
+    ],
+
 ];

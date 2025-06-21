@@ -20,6 +20,7 @@
                     <th>Bus Name</th>
                     <th>Source</th>
                     <th>Destination</th>
+                    <th>Coordinates</th>
                     <th>Trip Date</th>
                     <th>Price</th>
                     <th style="width: 20%;">Actions</th> <!-- Adjust the width of the Actions column -->
@@ -31,15 +32,14 @@
                     <td>{{ $route->bus->bus_name ?? 'N/A' }}</td>
                     <td>{{ $route->source }}</td>
                     <td>{{ $route->destination }}</td>
+                    <td>{{ $route->source_latitude }}, {{ $route->source_longitude }} - {{ $route->destination_latitude }}, {{ $route->destination_longitude }}</td>
                     <td>{{ $route->trip_date ? \Carbon\Carbon::parse($route->trip_date)->format('Y-m-d') : 'N/A' }}</td>
                     <td>Rs{{ $route->price }}</td>
                     <td>
                         <!-- Edit Button -->
-                        <a href="{{ route('routes.edit', ['id' => $route->id]) }}" class="btn btn-warning btn-sm">Edit</a>
-
-
+                        <a href="{{ route('routes.edit', $route) }}" class="btn btn-warning btn-sm">Edit</a>
                         <!-- Delete Button -->
-                        <form action="{{ route('routes.destroy', ['id' => $route->id]) }}" method="POST" style="display:inline;">
+                        <form action="{{ route('routes.destroy', $route) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this route?')">Delete</button>
@@ -89,10 +89,25 @@
                                 value="{{ date('Y-m-d') }}" 
                                 required>
                         </div>
-
                         <div class="mb-3">
                             <label for="price" class="form-label">Price</label>
                             <input type="number" class="form-control" name="price" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="source_latitude" class="form-label">Source Latitude</label>
+                            <input type="text" class="form-control" name="source_latitude" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="source_longitude" class="form-label">Source Longitude</label>
+                            <input type="text" class="form-control" name="source_longitude" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="destination_latitude" class="form-label">Destination Latitude</label>
+                            <input type="text" class="form-control" name="destination_latitude" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="destination_longitude" class="form-label">Destination Longitude</label>
+                            <input type="text" class="form-control" name="destination_longitude" required>
                         </div>
                     </div>
 

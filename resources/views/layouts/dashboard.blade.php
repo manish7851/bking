@@ -70,7 +70,7 @@
             padding: 0;
             margin: 0;
             flex: 1;
-            overflow-y: hidden;
+            overflow-x : hidden;
         }
         
         .sidebar ul li {

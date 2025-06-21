@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\BusTrackingApiController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Http\Controllers\BusController;
@@ -42,7 +44,16 @@ Route::delete('/customers/{id}', [CustomerController::class, 'destroy'])->name('
 Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
 
 // Route::get('/userdashboard', [App\Http\Controllers\UserController::class, 'dashboard'])->name('userdashboard');
-Route::get('/bookings/create', [App\Http\Controllers\BookingController::class, 'create'])->name('bookings.create');
+// Admin booking routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/bookings/create', [App\Http\Controllers\BookingController::class, 'create'])->name('admin.bookings.create');
+});
+
+// User booking routes
+Route::middleware(['customer.auth'])->group(function () {
+    Route::match(['get', 'post'], '/bookings/create', [App\Http\Controllers\BookingController::class, 'create'])->name('bookings.create');
+});
+Route::post('/booking/prepare', [App\Http\Controllers\BookingController::class, 'prepareBooking'])->name('booking.prepare');
 Route::post('/bookings/store', [App\Http\Controllers\BookingController::class, 'store'])->name('bookings.store');
 Route::get('/check-seat-availability', [BookingController::class, 'checkSeatAvailability'])->name('check.seat.availability');
 Route::post('/check-seat-availability', [BookingController::class, 'checkSeatAvailability'])->name('check.seat.availability.post');
@@ -61,12 +72,20 @@ Route::get('/routes/{id}/edit', [App\Http\Controllers\RouteController::class, 'e
 Route::post('/routes/store', [App\Http\Controllers\RouteController::class, 'store'])->name('routes.store');
 Route::delete('/routes/{id}', [App\Http\Controllers\RouteController::class, 'destroy'])->name('routes.destroy');
 
-Route::get('/userbookings/search', [App\Http\Controllers\BookingController::class, 'fetchRoutes'])->name('userbookings.search');
+// User booking routes
+Route::middleware(['customer.auth'])->group(function () {
+    Route::get('/userbookings/search', [App\Http\Controllers\BookingController::class, 'fetchRoutes'])->name('userbookings.search');
+    Route::get('/userbookings/create', [App\Http\Controllers\BookingController::class, 'userCreate'])->name('userbookings.create');
+    Route::post('/userbookings/create', [App\Http\Controllers\BookingController::class, 'userStore'])->name('userbookings.store');
+});
 Route::get('/geofences', [App\Http\Controllers\GeofenceController::class, 'index'])->name('geofences.index');
 Route::delete('/geofences/{id}', [App\Http\Controllers\GeofenceController::class, 'destroy'])->name('geofences.destroy');
 
  
+// eSewa Payment Routes
 Route::get('/payment/esewa/{bookingId}', [App\Http\Controllers\PaymentController::class, 'initiateEsewaPayment'])->name('payment.esewa.payment');
+Route::get('/payment/esewa/success', [App\Http\Controllers\PaymentController::class, 'esewaSuccess'])->name('payment.esewa.success');
+Route::get('/payment/esewa/failure', [App\Http\Controllers\PaymentController::class, 'esewaFailure'])->name('payment.esewa.failure');
 Route::post('/payment/khalti/verify', [App\Http\Controllers\PaymentController::class, 'verifyKhaltiPayment'])->name('payment.khalti.verify');
 
 // Ticket history and booking management
@@ -110,15 +129,23 @@ Route::get('/verify', [App\Http\Controllers\QRVerificationController::class, 'sh
 Route::post('/verify', [App\Http\Controllers\QRVerificationController::class, 'verify'])->name('booking.verify');
 Route::get('/verify/{code}', [App\Http\Controllers\QRVerificationController::class, 'verifyCode'])->name('booking.verify.code');
 
-// Payment routes
-Route::prefix('payment')->group(function () {
+// Payment and User Booking routes
+Route::middleware(['customer.auth'])->group(function () {
+    // Booking routes
+    Route::get('/userbookings/create', [App\Http\Controllers\BookingController::class, 'userCreate'])->name('userbookings.create');
+    Route::post('/userbookings/store', [App\Http\Controllers\BookingController::class, 'store'])->name('userbookings.store');
+    
     // eSewa routes
-    Route::get('success-messeage', [App\Http\Controllers\EsewaPaymentController::class, 'success'])->name('payment.success-message');
-    Route::get('failure', [App\Http\Controllers\EsewaPaymentController::class, 'failure'])->name('payment.esewa.failure');
+    Route::post('payment/esewa/process', [App\Http\Controllers\EsewaPaymentController::class, 'process'])->name('payment.esewa.process');
+Route::get('/payment/esewa/success', [PaymentController::class, 'esewaSuccess'])->name('payment.esewa.success');
+    Route::get('payment/esewa/failure', [App\Http\Controllers\EsewaPaymentController::class, 'failure'])->name('payment.esewa.failure');
+
+    // Khalti routes
+    Route::prefix('payment/khalti')->group(function () {
+        Route::post('/verify', [App\Http\Controllers\PaymentController::class, 'verifyKhaltiPayment'])->name('payment.khalti.verify');
+    });
 });
 
-// eSewa checkout route
-Route::post('/esewa/checkout', [App\Http\Controllers\EsewaPaymentController::class, 'checkout'])->name('esewa.checkout');
 Route::get('/userdashboard', [App\Http\Controllers\DashboardController::class, 'userDashboard'])
     ->middleware('customer.auth')
     ->name('userdashboard');
@@ -149,7 +176,7 @@ Route::prefix('routes')->group(function() {
     Route::get('/create', [App\Http\Controllers\RouteController::class, 'create'])->name('routes.create');
     Route::post('/', [App\Http\Controllers\RouteController::class, 'store'])->name('routes.store');
     Route::get('/{route}/edit', [App\Http\Controllers\RouteController::class, 'edit'])->name('routes.edit');
-    Route::put('/{route}', [App\Http\Controllers\RouteController::class, 'update'])->name('routes.update');
+    Route::get('/{route}', [App\Http\Controllers\RouteController::class, 'update'])->name('routes.update');
     Route::delete('/{route}', [App\Http\Controllers\RouteController::class, 'destroy'])->name('routes.destroy');
     Route::get('/track/{route}', [App\Http\Controllers\RouteController::class, 'trackRoute'])->name('routes.track');
 });
@@ -158,4 +185,14 @@ Route::get('/routes/picker', [App\Http\Controllers\RouteController::class, 'show
 // Custom path API for buses
 Route::post('/buses/{id}/custom-path', [App\Http\Controllers\BusController::class, 'saveCustomPath'])->name('buses.custom-path.save');
 Route::get('/buses/{id}/custom-path', [App\Http\Controllers\BusController::class, 'getCustomPath'])->name('buses.custom-path.get');
+// Booking preparation route (no auth required)
+Route::post('booking/prepare', [App\Http\Controllers\BookingController::class, 'prepareBooking'])->name('booking.prepare');
+
+// User payment routes
+Route::get('/payment/user/esewa/success', [App\Http\Controllers\PaymentController::class, 'userEsewaSuccess'])->name('payment.user.esewa.success');
+Route::get('/payment/user/esewa/failure', [App\Http\Controllers\PaymentController::class, 'userEsewaFailure'])->name('payment.user.esewa.failure');
+
+// Admin payment routes
+Route::get('/payment/admin/esewa/success', [App\Http\Controllers\PaymentController::class, 'adminEsewaSuccess'])->name('payment.admin.esewa.success');
+Route::get('/payment/admin/esewa/failure', [App\Http\Controllers\PaymentController::class, 'adminEsewaFailure'])->name('payment.admin.esewa.failure');
 

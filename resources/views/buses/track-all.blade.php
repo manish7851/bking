@@ -37,12 +37,12 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-10 offset-md-2 mt-4">
-            <h1>Live Bus Tracking</h1>
+            <h1>Live Bus Tracking1111</h1>
 
             <!-- Back Button -->
             <div class="mb-4">
                 <a href="{{ route('buses.index') }}" class="btn btn-secondary">
-                    ← Back to Busesss
+                    ← Back to Buses
                 </a>
             </div>
 
@@ -199,7 +199,7 @@
                     const busColor = '#' + bus.id.toString().padStart(6, '0').substr(-6);
                     const popupContent = `
                         <b>${bus.bus_name}</b><br>
-                        Bus #: ${bus.bus_number}<br>
+                        Bus: ${bus.bus_number}<br>
                         Speed: ${bus.speed || 0} km/h<br>
                         Last update: ${new Date(bus.last_tracked_at || Date.now()).toLocaleTimeString()}
                     `;

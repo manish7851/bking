@@ -57,7 +57,9 @@ class SimulateBusMovement extends Command
         $this->info("Duration: {$duration} minutes, Interval: {$interval} seconds");
         
         $startTime = now();
-        $endTime = $startTime->copy()->addMinutes($duration);
+        // $endTime = $startTime->copy()->addMinutes($duration);
+        
+        $endTime = $startTime->copy()->addMinutes(10);
         
         $iterations = 0;
         $apiKey = config('services.tracking.api_key');

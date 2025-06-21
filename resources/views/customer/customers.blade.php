@@ -1,4 +1,4 @@
-@extends('layouts.sidebar')
+@extends('layouts.dashboard')
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="{{ asset('css/sidebar.css') }}" rel="stylesheet">
@@ -14,25 +14,24 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-   <table class="table table-bordered table-striped" style="margin-top:50px; width:2px; margin-left:150px;">
+   <table class="table table-bordered table-striped" style="margin-top:50px; width:2px; margin-left:150px; width:max-content">
     <thead>
         <tr>
-            <th>#</th>
-            <th>Password</th>
+            <th>User ID</th>
             <th>Customer Name</th>
             <th>Address</th>
+            <th>Contact Number</th>
             <th>Email</th>
             <th>Actions</th>
-            <th>Contact Number</th>
         </tr>
     </thead>    <tbody>
  @forelse($customers as $index => $customer)
     @continue(!$customer || !isset($customer->customer_name, $customer->customer_address, $customer->email, $customer->password, $customer->customer_contact))
     <tr>
         <td>{{ $index + 1 }}</td>
-        <td>{{ $customer->password }}</td>
         <td>{{ $customer->customer_name }}</td>
         <td>{{ $customer->customer_address }}</td>
+        <td>{{ $customer->customer_contact }}</td>
         <td>{{ $customer->email }}</td>
         <td>
             <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editCustomerModal" 
@@ -46,11 +45,10 @@
                 <button onclick="return confirm('Are you sure?')" class="btn btn-sm btn-danger">Delete</button>
             </form>
         </td>
-        <td>{{ $customer->customer_contact }}</td>
     </tr>
 @empty
     <tr>
-        <td colspan="7">No customers found.</td>
+        <td colspan="6">No customers found.</td>
     </tr>
 @endforelse
 

@@ -21,7 +21,7 @@ class EsewaPaymentController extends Controller
                 'customer_id' => 'required|exists:customers,id',
                 'selected_seat' => 'required|string',
                 'price' => 'required|numeric|min:0',
-                'payment_method' => 'required|in:esewa,cash'
+                'payment_method' => 'required|in:esewa'
             ]);
 
             // If session('customer_id') is not set but a valid customer_id is present, set it (for admin/staff booking)
@@ -81,8 +81,8 @@ class EsewaPaymentController extends Controller
         $pdc = 0;
         $total = $amount + $tax;
         $pid = $booking->id;  // Booking ID नै use गर्ने
-        $success = route('payment.success-message') . '?booking_id=' . $booking->id;
-        $fail = route('payment.esewa.failure') . '?booking_id=' . $booking->id;
+        $success = route('esewa.success') . '?booking_id=' . $booking->id;
+        $fail = route('esewa.failure') . '?booking_id=' . $booking->id;
         $scd = config('services.esewa.merchant_id', 'EPAYTEST');
 
         session(['esewa_transaction' => [
@@ -184,6 +184,57 @@ class EsewaPaymentController extends Controller
                 'exception' => $e
             ]);
             return redirect()->route('userdashboard')->with('error', 'An unexpected error occurred while handling payment failure. Please contact support.');
+        }
+    }
+
+    public function process(Request $request)
+    {
+        // Get booking data from session if not in request
+        $bookingData = $request->all();
+        if (empty($bookingData) && session()->has('pending_booking')) {
+            $bookingData = session('pending_booking');
+        }
+        
+        if (empty($bookingData)) {
+            return redirect()->route('userbookings.search')
+                ->with('error', 'Booking data not found');
+        }
+
+        // Ensure user is logged in
+        if (!session('customer_id')) {
+            session()->put('pending_booking', $bookingData);
+            return redirect()->route('userlogin')
+                ->with('message', 'Please login to complete your booking')
+                ->with('redirect_after_login', route('payment.esewa.process'));
+        }
+
+        try {
+            // Create a pending booking record
+            $booking = new \App\Models\Booking([
+                'route_id' => $bookingData['route_id'],
+                'customer_id' => session('customer_id'),
+                'bus_id' => $bookingData['bus_id'],
+                'selected_seat' => $bookingData['selected_seat'],
+                'payment_method' => 'esewa',
+                'payment_status' => 'pending',
+                'price' => $bookingData['price']
+            ]);
+            $booking->save();
+
+            // Store booking in session
+            session(['current_booking' => $booking]);
+
+            // Generate eSewa payment form
+            return view('payment.esewa-redirect', [
+                'amount' => $booking->price,
+                'productId' => $booking->id,
+                'successUrl' => route('payment.esewa.success'),
+                'failureUrl' => route('payment.esewa.failure')
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('eSewa payment process error: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Error processing payment. Please try again.');
         }
     }
 }

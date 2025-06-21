@@ -18,7 +18,6 @@
                     </button>
                 </div>
             </div>
-            
             <!-- Map Statistics -->
             <div class="row mb-3">
                 <div class="col-md-3">
@@ -212,14 +211,14 @@
     .leaflet-control-button {
         display: block !important;
     }
-    .leaflet-routing-container {
+    /* .leaflet-routing-container {
         display: block !important;
         opacity: 1 !important;
     }
     .leaflet-routing-alternatives-container {
         display: block !important;
         opacity: 1 !important;
-    }
+    } */
 </style>
 @endpush
 
@@ -654,7 +653,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             addWaypoints: false,
                             draggableWaypoints: false,
                             fitSelectedRoutes: true,
-                            showAlternatives: false,
+                            // showAlternatives: false,
                             createMarker: function() { return null; }
                         }).addTo(map);
                     }

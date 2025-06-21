@@ -4,7 +4,7 @@
     $isCustomer = Auth::guard('customer')->check();
     $user = $isAdmin ? Auth::user() : ($isCustomer ? Auth::guard('customer')->user() : null);
 @endphp
-<div class="sidebar">
+<div class="sidebar" style="overflow-y:hidden;">
     <h2><i class="fas fa-bus"></i> Bus Booking</h2>    <div class="profile">
         @if($isAdmin)
             <img src="https://ui-avatars.com/api/?name={{ $user->name }}" alt="Admin">
@@ -22,7 +22,7 @@
         <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
         <li><a href="/dashboard/tracking"><i class="fas fa-satellite-dish"></i> GPS Tracking</a></li>
         <li><a href="/buses"><i class="fas fa-bus"></i> Buses</a></li>
-        <li><a href="/map/buses"><i class="fas fa-map-marked-alt"></i> Bus Map</a></li>
+        <!-- <li><a href="/map/buses"><i class="fas fa-map-marked-alt"></i> Bus Map</a></li> -->
         <li><a href="/routes"><i class="fas fa-route"></i> Routes</a></li>
         <li><a href="/customers"><i class="fas fa-users"></i> Customers</a></li>
         <li><a href="{{ route('bookings_page') }}"><i class="fas fa-ticket-alt"></i> Bookings</a></li>

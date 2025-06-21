@@ -35,11 +35,18 @@ class RouteController extends Controller
             'trip_date' => 'required|date|after_or_equal:today',
         ]);
     
+        // Verify bus exists and is available
+        $bus = Bus::findOrFail($validatedData['bus_id']);
+        
         // Create a new route
         Route::create([
             'bus_id' => $validatedData['bus_id'],
             'source' => $validatedData['source'],
             'destination' => $validatedData['destination'],
+            'source_latitude' => $request->input('source_latitude'),
+            'source_longitude' => $request->input('source_longitude'),
+            'destination_latitude' => $request->input('destination_latitude'),
+            'destination_longitude' => $request->input('destination_longitude'),
             'price' => $validatedData['price'],
             'trip_date' => $validatedData['trip_date'],
         ]);
@@ -71,11 +78,15 @@ class RouteController extends Controller
         $route = Route::findOrFail($id);
         $route->source = $request->input('source');
         $route->destination = $request->input('destination');
+        $route->source_latitude = $request->input('source_latitude');
+        $route->source_longitude = $request->input('source_longitude');
+        $route->destination_latitude = $request->input('destination_latitude');
+        $route->destination_longitude = $request->input('destination_longitude');
         $route->price = $request->input('price');
         $route->save();
 
         // Redirect back with a success message
-        return redirect()->route('routes.id')->with('success', 'Route updated successfully!');
+        return redirect()->route('routes.index')->with('success', 'Route updated successfully!');
     }
 
     public function showRoutePicker()

@@ -1,4 +1,4 @@
-@extends('layouts.sidebar')
+@extends('layouts.dashboard')
 
 @php
     // Ensure $bookedSeats is always defined before any rendering logic
@@ -68,9 +68,6 @@
                     $('#edit_route_id').val(response.route_id || '');
                     $('#edit_seat').val(response.seat || '');
                     $('#edit_price').val(response.price || '');
-                    let paymentStatus = response.payment_status || 'pending';
-                    if (paymentStatus === 'completed') paymentStatus = 'paid';
-                    $('#edit_payment_status').val(paymentStatus);
                     // Store booking ID for later use
                     $('#editBookingModal').data('booking-id', bookingId);
                     // Show the modal using Bootstrap 5 API
@@ -99,8 +96,7 @@
             const $btn = $(this);
             $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Saving...');
             // Get form data
-            let statusToSend = $('#edit_payment_status').val();
-            if (statusToSend === 'paid') statusToSend = 'completed';
+
             const data = {
                 _token: $('meta[name="csrf-token"]').attr('content'),
                 customer_id: $('#edit_customer_id').val(),
@@ -109,7 +105,6 @@
                 route_id: $('#edit_route_id').val(),
                 seat: $('#edit_seat').val(),
                 price: $('#edit_price').val(),
-                payment_status: statusToSend
             };
             // Send update request
             $.ajax({
@@ -147,12 +142,22 @@
             const payment_status = $('#payment_status').val();
             // Validate required fields
             if (!customer_id || !bus_id || !route_id || !seat) {
-                alert('Please select customer, bus, route, and seat.');
+                // Remove alert popup, just highlight button
+                $(this).prop('disabled', true)
+                       .removeClass('btn-primary')
+                       .addClass('btn-danger')
+                       .text('Select all fields');
+                setTimeout(() => {
+                    $(this).prop('disabled', false)
+                           .removeClass('btn-danger')
+                           .addClass('btn-primary')
+                           .text('Confirm Booking');
+                }, 2000);
                 return;
             }
             // Disable button and show spinner
             const $btn = $(this);
-            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Booking...');
+            $btn.prop('disabled', true).removeClass('btn-primary').addClass('btn-danger').html('<span class="spinner-border spinner-border-sm"></span> Booking...');
             // Prepare data
             const data = {
                 _token: $('meta[name="csrf-token"]').attr('content'),
@@ -163,7 +168,6 @@
                 seat,
                 selected_seat: seat, // Ensure both seat and selected_seat are sent
                 price,
-                payment_status
             };
            
             $.ajax({
@@ -171,13 +175,16 @@
                 type: 'POST',
                 data: data,
                 success: function(response) {
-                    // Only reload or show message, do not handle eSewa redirect
-                    alert(response.message || 'Booking successful!');
+                    // Remove alert popup, just disable button
+                    $btn.prop('disabled', true)
+                        .removeClass('btn-primary')
+                        .addClass('btn-danger')
+                        .html('Booked');
                     $('#seatSelectionModal').modal('hide');
                     window.location.reload();
                 },
                 error: function(xhr) {
-                    $btn.prop('disabled', false).html('Confirm Booking');
+                    $btn.prop('disabled', false).removeClass('btn-danger').addClass('btn-primary').html('Confirm Booking');
                     let msg = 'Failed to create booking.';
                     if (xhr.responseJSON) {
                         if (xhr.responseJSON.message) {
@@ -186,71 +193,75 @@
                             msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
                         }
                     }
-                    alert(msg);
+                    // Remove alert popup
                 }
             });
         });
     });
 </script>
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 style="margin-left: 200px;">Bookings</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#seatSelectionModal" style="min-width: 160px;">+ Add Booking</button>
+<div class="container-fluid px-4 py-3" style="background: #f8f9fa; min-height: 100vh; overflow-x: hidden; width:max-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold" style="margin-left: 250px; color: #222;">Bookings</h2>
+        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#seatSelectionModal" style="min-width: 160px; font-weight: 500;">+ Add Booking</button>
     </div>
-
-    <table class="table table-bordered table-striped" style="margin-top:50px; width: -10px;  margin-left:102px;">
-        <thead>
-            <tr>
-                <th>Customer ID</th>
-                <th>Customer Name</th>
-                <th>Address</th>
-                <th>Contact</th>
-                <th>Bus Name</th>
-                <th>Bus Number</th>
-                <th>Source</th>
-                <th>Destination</th>
-                <th>Seat</th>
-                <th>Price</th>
-                <th>Status</th>
-                <th>Payment Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($bookings as $booking)
-            <tr>
-                <td>{{ $booking->customer->id ?? 'N/A' }}</td>
-                <td>{{ $booking->customer->customer_name ?? 'N/A' }}</td>
-                <td>{{ $booking->customer->customer_address ?? 'N/A' }}</td>
-                <td>{{ $booking->customer->customer_contact ?? 'N/A' }}</td>
-                <td>{{ $booking->bus_name ?? ($booking->route->bus->bus_name ?? 'N/A') }}</td>
-                <td>{{ $booking->bus_number ?? 'N/A' }}</td>
-                <td>{{ $booking->route->source ?? 'N/A' }}</td>
-                <td>{{ $booking->route->destination ?? 'N/A' }}</td>
-                <td>{{ $booking->seat ?? 'N/A' }}</td>
-                <td>{{ $booking->price ?? 'N/A' }}</td>
-                <td>{{ $booking->status ?? 'N/A' }}</td>
-                <td>{{ $booking->payment_status ?? 'N/A' }}</td>
-
-                <td>
-                    <form action="{{ route('bookings.destroy', $booking->id) }}" method="POST" style="display:inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                    <button type="button" class="btn btn-warning btn-sm editBooking"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editBookingModal"
-                        data-booking-id="{{ $booking->id ?? '' }}"
-                        @if(empty($booking->id)) disabled @endif>
-                        Edit
-                    </button>
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    <div class="table-responsive rounded shadow-sm bg-white p-3" style="margin-left: 250px; margin-left: 200px;">
+        <table class="table table-bordered table-hover align-middle mb-0" style="min-width: 1200px;">
+            <thead class="table-light">
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Customer Name</th>
+                    <th>Address</th>
+                    <th>Contact</th>
+                    <th>Bus Name</th>
+                    <th>Bus Number</th>
+                    <th>Source</th>
+                    <th>Destination</th>
+                    <th>Seat</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($bookings as $booking)
+                <tr>
+                    <td>{{ $booking->customer->id ?? 'N/A' }}</td>
+                    <td>{{ $booking->customer->customer_name ?? 'N/A' }}</td>
+                    <td>{{ $booking->customer->customer_address ?? 'N/A' }}</td>
+                    <td>{{ $booking->customer->customer_contact ?? 'N/A' }}</td>
+                    <td>{{ $booking->bus_name ?? ($booking->route->bus->bus_name ?? 'N/A') }}</td>
+                    <td>{{ $booking->bus_number ?? 'N/A' }}</td>
+                    <td>{{ $booking->route->source ?? 'N/A' }}</td>
+                    <td>{{ $booking->route->destination ?? 'N/A' }}</td>
+                    <td>{{ $booking->seat ?? 'N/A' }}</td>
+                    <td>{{ $booking->price ?? 'N/A' }}</td> 
+                    <td>
+                        <div class="d-flex gap-2">
+                            <form action="{{ route('bookings.destroy', $booking->id) }}" method="POST" style="display:inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure you want to delete this booking?')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                            <button type="button" class="btn btn-warning btn-sm editBooking" title="Edit"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editBookingModal"
+                                data-booking-id="{{ $booking->id ?? '' }}"
+                                @if(empty($booking->id)) disabled @endif>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="13" class="text-center text-muted">No bookings found.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 </div>
 
 
@@ -299,7 +310,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="bus_id" class="form-label">Bus Name</label>
+                        <label for="bus_id" class="form-label">Bus Number</label>
                         <select id="bus_number" name="bus_number" class="form-control" required>
                             <option value="">Select Bus Number</option>
                                @foreach ($routes as $route)
@@ -335,7 +346,7 @@
                                 $seatCode = 'A' . $i;
                                 $isBooked = is_array($bookedSeats) ? in_array($seatCode, $bookedSeats) : (isset($bookedSeats[$route->id]) && in_array($seatCode, $bookedSeats[$route->id]));
                             @endphp
-                            <button type="button" class="btn seat {{ $isBooked ? 'btn-danger' : 'btn-secondary' }}" data-seat="A{{ $i }}" {{ $isBooked ? 'disabled' : '' }}>A{{ $i }}</button>
+                            <button type="button" class="btn seat {{ $isBooked ? 'btn-danger' : 'btn-secondary' }}" data-seat="A{{ $i }}" @if($isBooked) disabled style="background-color:#dc3545;border-color:#dc3545;color:white;opacity:0.7;" @endif>A{{ $i }}</button>
                         @endfor
                     </div>
                     <div id="seat-group-B" class="mb-3 d-flex flex-wrap gap-2 align-items-center">
@@ -345,7 +356,7 @@
                                 $seatCode = 'B' . $i;
                                 $isBooked = is_array($bookedSeats) ? in_array($seatCode, $bookedSeats) : (isset($bookedSeats[$route->id]) && in_array($seatCode, $bookedSeats[$route->id]));
                             @endphp
-                            <button type="button" class="btn seat {{ $isBooked ? 'btn-danger' : 'btn-secondary' }}" data-seat="B{{ $i }}" {{ $isBooked ? 'disabled' : '' }}>B{{ $i }}</button>
+                            <button type="button" class="btn seat {{ $isBooked ? 'btn-danger' : 'btn-secondary' }}" data-seat="B{{ $i }}" @if($isBooked) disabled style="background-color:#dc3545;border-color:#dc3545;color:white;opacity:0.7;" @endif>B{{ $i }}</button>
                         @endfor
                     </div>
                     <div class="mb-3">
@@ -353,15 +364,6 @@
                         <input type="text" id="price" class="form-control" readonly>
                         <input type="hidden" name="price" id="hidden_price" value="">
                     </div>
-                    <div class="form-group mb-3">
-                        <label for="payment_status">Payment Status</label>
-                        <select name="payment_status" id="payment_status" class="form-control">
-                            <option value="pending" {{ old('payment_status', $booking->payment_status ?? '') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="paid" {{ old('payment_status', $booking->payment_status ?? '') == 'paid' ? 'selected' : '' }}>Paid</option>
-                            <option value="failed" {{ old('payment_status', $booking->payment_status ?? '') == 'failed' ? 'selected' : '' }}>Failed</option>
-                        </select>
-                    </div>
-
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -454,7 +456,7 @@
                                 $seatCode = 'A' . $i;
                                 $isBooked = is_array($bookedSeats) ? in_array($seatCode, $bookedSeats) : (isset($bookedSeats[$route->id]) && in_array($seatCode, $bookedSeats[$route->id]));
                             @endphp
-                            <button type="button" class="btn seat {{ $isBooked ? 'btn-danger' : 'btn-secondary' }}" data-seat="A{{ $i }}" {{ $isBooked ? 'disabled' : '' }}>A{{ $i }}</button>
+                            <button type="button" class="btn seat {{ $isBooked ? 'btn-danger' : 'btn-secondary' }}" data-seat="A{{ $i }}" @if($isBooked) disabled style="background-color:#dc3545;border-color:#dc3545;color:white;opacity:0.7;" @endif>A{{ $i }}</button>
                         @endfor
                     </div>
                     <div id="edit_seat_group_B" class="mb-3 d-flex flex-wrap gap-2 align-items-center">
@@ -464,20 +466,12 @@
                                 $seatCode = 'B' . $i;
                                 $isBooked = is_array($bookedSeats) ? in_array($seatCode, $bookedSeats) : (isset($bookedSeats[$route->id]) && in_array($seatCode, $bookedSeats[$route->id]));
                             @endphp
-                            <button type="button" class="btn seat {{ $isBooked ? 'btn-danger' : 'btn-secondary' }}" data-seat="B{{ $i }}" {{ $isBooked ? 'disabled' : '' }}>B{{ $i }}</button>
+                            <button type="button" class="btn seat {{ $isBooked ? 'btn-danger' : 'btn-secondary' }}" data-seat="B{{ $i }}" @if($isBooked) disabled style="background-color:#dc3545;border-color:#dc3545;color:white;opacity:0.7;" @endif>B{{ $i }}</button>
                         @endfor
                     </div>
                     <div class="mb-3">
                         <label for="edit_price" class="form-label">Price</label>
                         <input type="text" id="edit_price" class="form-control" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_payment_status" class="form-label">Payment Status</label>
-                        <select name="payment_status" id="edit_payment_status" class="form-control">
-                            <option value="pending" {{ old('payment_status', $booking->payment_status ?? '') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="paid" {{ old('payment_status', $booking->payment_status ?? '') == 'paid' ? 'selected' : '' }}>Paid</option>
-                            <option value="failed" {{ old('payment_status', $booking->payment_status ?? '') == 'failed' ? 'selected' : '' }}>Failed</option>
-                        </select>
                     </div>
                 </form>
             </div>
@@ -589,9 +583,6 @@
                     $('#edit_route_id').val(response.route_id || '');
                     $('#edit_seat').val(response.seat || '');
                     $('#edit_price').val(response.price || '');
-                    let paymentStatus = response.payment_status || 'pending';
-                    if (paymentStatus === 'completed') paymentStatus = 'paid';
-                    $('#edit_payment_status').val(paymentStatus);
                     // Store booking ID for later use
                     $('#editBookingModal').data('booking-id', bookingId);
                     // Show the modal using Bootstrap 5 API
@@ -620,8 +611,6 @@
             const $btn = $(this);
             $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Saving...');
             // Get form data
-            let statusToSend = $('#edit_payment_status').val();
-            if (statusToSend === 'paid') statusToSend = 'completed';
             const data = {
                 _token: $('meta[name="csrf-token"]').attr('content'),
                 customer_id: $('#edit_customer_id').val(),
@@ -630,7 +619,6 @@
                 route_id: $('#edit_route_id').val(),
                 seat: $('#edit_seat').val(),
                 price: $('#edit_price').val(),
-                payment_status: statusToSend
             };
             // Send update request
             $.ajax({

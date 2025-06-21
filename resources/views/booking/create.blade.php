@@ -1,6 +1,8 @@
 @extends('layouts.app')
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/seats.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <style>    .payment-option {
         border: 1px solid #ddd;
         padding: 15px;
@@ -28,6 +30,24 @@
         margin: 0;
         cursor: pointer;
         font-weight: 500;
+    }
+    
+    .highlight-payment-methods {
+        animation: highlight-box 2s ease-in-out;
+    }
+    
+    @keyframes highlight-box {
+        0% { box-shadow: none; }
+        50% { box-shadow: 0 0 15px rgba(13, 110, 253, 0.5); }
+        100% { box-shadow: none; }
+    }
+    
+    .payment-error-modal .swal2-html-container {
+        text-align: left;
+    }
+    
+    .payment-error-modal .swal2-html-container ul {
+        margin-bottom: 0;
     }
 </style>
 @endpush
@@ -128,9 +148,8 @@
                             <span class="badge bg-danger me-2">Booked</span>
                             <span class="badge bg-primary">Selected</span>
                         </div>
-                    </div>                    <!-- Booking Form -->
-                    <div id="bookingForm" style="display: none;">
-                        <form id="actualBookingForm" class="mt-4">
+                    </div>                    <!-- Booking Form -->                    <div id="bookingForm" style="display: none;">
+                        <form id="actualBookingForm" method="POST" action="{{ route('booking.prepare') }}" class="mt-4">
                             @csrf
                             <input type="hidden" name="route_id" value="{{ $route->id }}">
                             <input type="hidden" name="customer_id" value="{{ $customer->id ?? '' }}">
@@ -190,145 +209,83 @@
 </div>
 
 @push('scripts')
-<script src="https://khalti.com/static/khalti-checkout.js"></script>
-<script>
-    var bookingStoreUrl = "{{ route('bookings.store') }}";
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+<script src="https://khalti.s3.ap-south-1.amazonaws.com/KPG/dist/2020.12.17.0.0.0/khalti-checkout.iffe.js"></script>
+
+<script>    // Set up global variables for payment handlers
     window.khaltiPublicKey = "{{ config('services.khalti.public_key') }}";
     window.khaltiVerifyUrl = "{{ route('payment.khalti.verify') }}";
 </script>
+ 
 <script src="{{ asset('js/booking.js') }}"></script>
+<script src="{{ asset('js/payment-handler.js') }}"></script>
 @if(config('app.debug'))
 <script src="{{ asset('js/seat-debug.js') }}"></script>
 @endif
 
 <script>
 $(document).ready(function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
     // Initialize payment method selection
     $('.payment-option').click(function() {
         const radio = $(this).find('input[type="radio"]');
         radio.prop('checked', true).trigger('change');
-
-        // Remove active class from all options and add to selected
         $('.payment-option').removeClass('active');
         $(this).addClass('active');
-    });    // Update payment method when radio changes
+    });
+
+    // Update payment method when radio changes
     $('input[name="payment_method_radio"]').change(function() {
         const selectedMethod = $(this).val();
         $('#payment_method').val(selectedMethod);
         const btnText = $('#btn-text');
-        if (selectedMethod === 'esewa') {
-            btnText.text('Pay with eSewa');
-        } else if (selectedMethod === 'khalti') {
-            btnText.text('Pay with Khalti');
-        } else {
-            btnText.text('Book Seat');
-        }
+        btnText.text(selectedMethod === 'esewa' ? 'Pay with eSewa' : 
+                    selectedMethod === 'khalti' ? 'Pay with Khalti' : 
+                    'Book Seat');
     });
 
-    // Seat selection handler: update selected_seat and seat_display
-    $(document).on('click', '.seat', function() {
-        if (!$(this).prop('disabled')) {
-            var seat = $(this).data('seat');
-            $('#selected_seat').val(seat);
-            $('#seat_display').text(seat);
-            // Optionally, highlight selected seat
-            $('.seat').removeClass('btn-primary');
-            $(this).addClass('btn-primary');
-        }
-    });
-
-    // Change form submit handler to use #actualBookingForm
+    // Booking form submission
     $('#actualBookingForm').submit(function(e) {
-        e.preventDefault();
-        // Always update the hidden input before submit
-        const selectedSeat = $('#seat_display').text();
-        $('#selected_seat').val(selectedSeat !== 'None' ? selectedSeat : '');
-        if (!$('#selected_seat').val()) {
-            alert('Please select a seat first');
-            $('#selected_seat').focus();
-            return;
-        }
-        const paymentMethod = $('#payment_method').val();
-        if (paymentMethod === 'esewa') {
-            // Redirect to eSewa payment gateway
-            const formData = $(this).serialize();
-            $.ajax({
-                url: "{{ route('esewa.checkout') }}",
-                method: 'POST',
-                data: formData,
-                success: function(response) {
-                    if (response.redirect_url) {
-                        window.location.href = response.redirect_url;
-                    } else {
-                        alert('Failed to initiate eSewa payment. Please try again.');
-                    }
-                },
-                error: function(xhr) {
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        alert(xhr.responseJSON.message);
-                    } else {
-                        alert('An error occurred while processing your payment.');
-                    }
-                }
-            });
-        } else if (paymentMethod === 'khalti') {
-            // Khalti integration
-            const amount = parseFloat($('input[name="price"]').val()) * 100; // Khalti expects paisa
-            const publicKey = window.khaltiPublicKey || '';
+        // Prepare form data for validation
+        const formData = $(this).serializeArray().reduce((obj, item) => {
+            obj[item.name] = item.value;
+            return obj;
+        }, {});
 
-            const bookingData = $(this).serializeArray();
-            var khaltiConfig = {
-                "publicKey": publicKey,
-                "productIdentity": $('input[name="route_id"]').val(),
-                "productName": $('input[name="bus_name"]').val() || 'Bus Ticket',
-                "productUrl": window.location.href,
-                "eventHandler": {
-                    onSuccess (payload) {
-                        // Send payload.token and booking data to backend for verification
-                        const postData = {};
-                        bookingData.forEach(function(item) { postData[item.name] = item.value; });
-                        postData['khalti_token'] = payload.token;
-                        postData['amount'] = amount;
-                        $.ajax({
-                            url: "{{ route('payment.khalti.verify') }}",
-                            method: 'POST',
-                            data: postData,
-                            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                            success: function(response) {
-                                if (response.success && response.redirect_url) {
-                                    window.location.href = response.redirect_url;
-                                } else if (response.success) {
-                                    alert('Payment successful!');
-                                    window.location.reload();
-                                } else {
-                                    alert(response.message || 'Khalti payment verification failed.');
-                                }
-                            },
-                            error: function(xhr) {
-                                alert('Khalti payment verification failed.');
-                            }
-                        });
-                    },
-                    onError (error) {
-                        alert('Khalti payment error: ' + (error.message || error));
-                    },
-                    onClose () {
-                        // User closed Khalti widget
-                    }
-                }
-            };
-            var checkout = new KhaltiCheckout(khaltiConfig);
-            checkout.show({amount: amount});
-            return;
-        } else {
-            // Only allow direct booking for cash or other methods (if any)
-            // For now, fallback to default (should not happen)
-            this.submit();
+        // Validate prerequisites
+        if (!PaymentHandler.validatePrerequisites(formData)) {
+            e.preventDefault();
+            return false;
+        }
+
+        const paymentMethod = $('#payment_method').val();
+        
+        // For eSewa, let the form submit normally
+        if (paymentMethod === 'esewa') {
+            const $submitBtn = $('#book-btn');
+            $submitBtn.prop('disabled', true).find('#btn-text').html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
+            return true; // Allow form to submit
+        }
+        
+        // For Khalti, prevent form submission and handle via Khalti checkout
+        if (paymentMethod === 'khalti') {
+            e.preventDefault();
+            const amount = parseFloat(formData.price) * 100;
+            khaltiHandler.process(formData, amount, window.khaltiPublicKey).catch(error => {
+                PaymentHandler.handleError(error, 'gateway');
+            });
+            return false;
         }
     });
 
-    // Set payment_method to 'esewa' by default
-    $('#payment_method').val('esewa');
+    // Set default payment method as eSewa
+    $('input[name="payment_method_radio"][value="esewa"]').prop('checked', true).trigger('change');
+    $('.payment-option[data-method="esewa"]').addClass('active');
 });
 </script>
 @endpush

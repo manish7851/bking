@@ -74,9 +74,9 @@
                             <th>Bus Name</th>
                             <th>Bus Number</th>
                             <th>IMEI</th>
-                            <th>Location</th>
+                            <!-- <th>Location</th> -->
                             <th>Active Trip</th>
-                            <th>Last Update</th>
+                            <!-- <th>Last Update</th> -->
                             <th>Tracking Status</th>
                             <th>Action</th>
                         </tr>
@@ -87,13 +87,13 @@
                             <td>{{ $bus->bus_name }}</td>
                             <td>{{ $bus->bus_number }}</td>
                             <td>{{ $bus->imei ?: 'Not set' }}</td>
-                            <td>
+                            <!-- <td>
                                 @if($bus->latitude && $bus->longitude)
                                     {{ number_format($bus->latitude, 5) }}, {{ number_format($bus->longitude, 5) }}
                                 @else
                                     <span class="text-muted">No data</span>
                                 @endif
-                            </td>
+                            </td> -->
                             <td>                                @php
                                     $activeRoute = $bus->routes()
                                         ->whereDate('trip_date', '>=', now()->format('Y-m-d'))
@@ -120,13 +120,13 @@
                                     <span class="text-muted">No upcoming trips</span>
                                 @endif
                             </td>
-                            <td>
+                            <!-- <td>
                                 @if($bus->last_tracked_at)
                                     {{ \Carbon\Carbon::parse($bus->last_tracked_at)->diffForHumans() }}
                                 @else
                                     <span class="text-muted">Never</span>
                                 @endif
-                            </td>
+                            </td> -->
                             <td>
                                 <span class="badge {{ $bus->tracking_enabled ? 'bg-success' : 'bg-secondary' }}">
                                     {{ $bus->tracking_enabled ? 'Active' : 'Inactive' }}

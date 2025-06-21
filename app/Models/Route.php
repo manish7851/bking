@@ -16,8 +16,14 @@ class Route extends Model
         'destination',
         'trip_date',
         'price',
-        'bus_id'
+        'bus_id',
+        'source_latitude',
+        'source_longitude',
+        'destination_latitude',
+        'destination_longitude'
     ];
+
+    protected $with = ['bus']; // Always load the bus relationship
 
     protected $casts = [
         'trip_date' => 'datetime'
@@ -32,9 +38,9 @@ class Route extends Model
     {
         return $this->hasMany(Booking::class);
     }
-    
 
-    
-
-    
+    public function getRouteNameAttribute()
+    {
+        return "{$this->source} - {$this->destination}";
+    }
 }
