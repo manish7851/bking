@@ -17,13 +17,6 @@ class BusTrackingApiController extends Controller
      */
     public function updateLocation(Request $request)
     {
-                $request->logger->info('Bus location update request received', [
-            'bus_id' => $request->bus_id,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'speed' => $request->speed,
-            'heading' => $request->heading
-        ]);
         $request->validate([
             'bus_id' => 'required|exists:buses,id',
             'latitude' => 'required|numeric',

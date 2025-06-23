@@ -8,7 +8,7 @@ Route::get('/test-route', function () {
     return response()->json(['message' => 'Test OK']);
 });
 // // GPS tracking endpoint for bus location updates
-// Route::post('/bus/location/update', [BusTrackingApiController::class, 'updateLocation']);
+Route::post('/bus/location/update', [BusTrackingApiController::class, 'updateLocation']);
 
 // // GPS tracking endpoint for bus location updates from TCP server
 // Route::post('/bus/location/update-gps', [BusController::class, 'updateGps']);

@@ -64,7 +64,8 @@
                             </p>
                             <p><strong>Last Update:</strong> 
                                 <span id="last-update">
-                                    {{ $bus->last_tracked_at ? $bus->last_tracked_at->diffForHumans() : 'Never' }}
+                                    {{ $bus->last_tracked_at ? $bus->last_tracked_at : 'Never' }}
+
                                 </span>
                             </p>
                             <p><strong>Speed:</strong> <span id="current-speed">{{ $bus->speed ?? 0 }}</span> km/h</p>
@@ -524,10 +525,10 @@ socket.addEventListener('message', (event) => {
         const message = JSON.parse(event.data);
 
         // Check message type and structure
-        if ((message.type='update' || message.type === 'initial_state') && message.data && message.data[0].imei) {
+        if ((message.type='update' || message.type === 'initial_state') && message.data && (message.data[0]?.imei || message.data?.imei)) {
             const {
                 imei, lat, lon, speed, course, datetime, lastUpdate
-            } = message.data[0];
+            } = message.data[0] != null? message.data[0] : message.data;
 
             const formatted = `
               IMEI: ${imei}
@@ -560,7 +561,7 @@ socket.addEventListener('message', (event) => {
                     busMarker = L.marker(position, {icon: icon}).addTo(map);
                 }
                 // Send updated location to server via AJAX to update in DB
-                fetch(`/buses/${busInfo.id}/update-location`, {
+                fetch(`/api/bus/location/update`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -568,7 +569,6 @@ socket.addEventListener('message', (event) => {
                     },
                     body: JSON.stringify({
                         api_key: 'public_api_key_for_location_updates',
-                        imei: imei,
                         bus_id: busInfo.id,
                         latitude: lat,
                         longitude: lon,
