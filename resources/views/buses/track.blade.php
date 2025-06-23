@@ -498,7 +498,7 @@
     showAlternatives: true,
     show: false,
     createMarker: function(i, waypoint, n) {
-      const labels = ['Tulsipur(Startttttt)', 'Pokhara (End)'];
+      const labels = [activeRoute.source, activeRoute.destination];
       return L.marker(waypoint.latLng).bindPopup(labels[i]).openPopup();
     }
   }).addTo(map);

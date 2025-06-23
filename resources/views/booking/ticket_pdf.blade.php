@@ -14,15 +14,18 @@
 <body>
     <div class="header">
         <h2>Bus Ticket</h2>
-        <h4>Booking ID: #{{ $booking->id }}</h4>
+        <h4>Booking ID: {{ $booking->id }}</h4>
     </div>
     <table class="details">
-        <tr><th>Passenger</th><td>{{ $booking->customer->customer_name ?? 'N/A' }}</td></tr>
-        <tr><th>Bus</th><td>{{ $booking->bus_name }} ({{ $booking->bus_number }})</td></tr>
-        <tr><th>Route</th><td>{{ $booking->route->source ?? $booking->source ?? 'N/A' }} → {{ $booking->route->destination ?? $booking->destination ?? 'N/A' }}</td></tr>
+        <tr><th>Passenger Name</th><td>{{ $booking->customer->customer_name ?? 'N/A' }}</td></tr>
+        <tr><th>Bus Name</th><td>{{ $booking->bus_name }} ({{ $booking->bus_number }})</td></tr>
+        <tr>
+            <th>Route</th>
+            <td>{{ trim(preg_replace('/[^\p{L}\p{N}\s→-]/u', '', $booking->route->source ?? $booking->source ?? 'N/A')) }} → {{ trim(preg_replace('/[^\p{L}\p{N}\s→-]/u', '', $booking->route->destination ?? $booking->destination ?? 'N/A')) }}</td>
+        </tr>
         <tr><th>Seat</th><td>{{ $booking->seat }}</td></tr>
         <tr><th>Price</th><td>Rs. {{ number_format($booking->price, 2) }}</td></tr>
-        <tr><th>Status</th><td>{{ ucfirst($booking->payment_status) }}</td></tr>
+        <tr><th>Payment Status</th><td>{{ ucfirst($booking->payment_status) }}</td></tr>
         <tr><th>Booked At</th><td>{{ $booking->created_at->format('Y-m-d H:i') }}</td></tr>
     </table>
     @if($booking->qr_code_path)

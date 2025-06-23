@@ -29,8 +29,20 @@ Route::get('/', function () {
 // Removed duplicate userdashboard route - now handled in routes_web.php with proper customer middleware
 
 Route::get('/profile', function () {
-    return view('profile.show');
+    $customer = null;
+    if (session('customer_id')) {
+        $customer = \App\Models\Customer::find(session('customer_id'));
+    }
+    return view('profile.show', compact('customer'));
 })->name('profile.show');
+
+Route::get('/profile/edit', function () {
+    $customer = null;
+    if (session('customer_id')) {
+        $customer = \App\Models\Customer::find(session('customer_id'));
+    }
+    return view('profile.edit', compact('customer'));
+})->name('profile.edit');
 
 Route::get('/userlogin', [App\Http\Controllers\AuthController::class, 'showUserLoginForm'])->name('userlogin');
 Route::post('/userlogin', [App\Http\Controllers\AuthController::class, 'userLogin'])->name('userlogin.attempt');
@@ -150,8 +162,7 @@ Route::get('/userdashboard', [App\Http\Controllers\DashboardController::class, '
     ->middleware('customer.auth')
     ->name('userdashboard');
 Route::get('/userbookings', [App\Http\Controllers\BookingController::class, 'usersBookings'])->name('userbookings');
-
-// Customer password reset routes
+Route::get('/userbookings/search', [App\Http\Controllers\UserBookingController::class, 'search'])->name('userbookings.search');// Customer password reset routes
 Route::get('customer/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('customer.password.request');
 Route::post('customer/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('customer.password.email');
 Route::get('customer/password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('customer.password.reset');
@@ -195,4 +206,29 @@ Route::get('/payment/user/esewa/failure', [App\Http\Controllers\PaymentControlle
 // Admin payment routes
 Route::get('/payment/admin/esewa/success', [App\Http\Controllers\PaymentController::class, 'adminEsewaSuccess'])->name('payment.admin.esewa.success');
 Route::get('/payment/admin/esewa/failure', [App\Http\Controllers\PaymentController::class, 'adminEsewaFailure'])->name('payment.admin.esewa.failure');
+Route::get('/usersbookings', function () {
+    $bookings = collect();
+    if (session('customer_id')) {
+        $bookings = \App\Models\Booking::where('customer_id', session('customer_id'))
+            ->orderBy('created_at', 'desc')
+            ->with(['route.bus'])
+            ->get();
+    }
+    return view('users.userbookings', compact('bookings'));
+})->name('usersbookings');
+Route::match(['post', 'put'], '/profile/update', function (\Illuminate\Http\Request $request) {
+    if (!session('customer_id')) {
+        return redirect()->route('userlogin')->with('error', 'Please login to update your profile.');
+    }
+    $customer = \App\Models\Customer::find(session('customer_id'));
+    if (!$customer) {
+        return redirect()->route('profile.show')->with('error', 'Customer not found.');
+    }
+    $customer->customer_name = $request->input('customer_name');
+    $customer->email = $request->input('email');
+    $customer->customer_contact = $request->input('customer_contact');
+    $customer->customer_address = $request->input('customer_address');
+    $customer->save();
+    return redirect()->route('profile.show')->with('success', 'Profile updated successfully!');
+})->name('profile.update');
 

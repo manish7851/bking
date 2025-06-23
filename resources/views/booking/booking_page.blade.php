@@ -168,6 +168,7 @@
                 seat,
                 selected_seat: seat, // Ensure both seat and selected_seat are sent
                 price,
+                send_ticket_notification: $('#send_ticket_notification').is(':checked') ? 1 : 0
             };
            
             $.ajax({
@@ -200,13 +201,13 @@
     });
 </script>
 
-<div class="container-fluid px-4 py-3" style="background: #f8f9fa; min-height: 100vh; overflow-x: hidden; width:max-content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold" style="margin-left: 250px; color: #222;">Bookings</h2>
+<div class="container-fluid px-4 py-3" style="background: #f8f9fa; min-height: 100vh; width:max-content; overflow-x:hidden;">
+    <div class="d-flex justify-content-between align-items-center mb-6">
+        <h2 class="fw-bold" style="margin-left: 300px; color: #222;">Bookings</h2>
         <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#seatSelectionModal" style="min-width: 160px; font-weight: 500;">+ Add Booking</button>
     </div>
-    <div class="table-responsive rounded shadow-sm bg-white p-3" style="margin-left: 250px; margin-left: 200px;">
-        <table class="table table-bordered table-hover align-middle mb-0" style="min-width: 1200px;">
+    <div class="table-responsive rounded shadow-sm bg-white p-3" style="margin-left: 340px; ">
+        <table class="table table-bordered table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
                     <th>Customer ID</th>
@@ -356,13 +357,19 @@
                                 $seatCode = 'B' . $i;
                                 $isBooked = is_array($bookedSeats) ? in_array($seatCode, $bookedSeats) : (isset($bookedSeats[$route->id]) && in_array($seatCode, $bookedSeats[$route->id]));
                             @endphp
-                            <button type="button" class="btn seat {{ $isBooked ? 'btn-danger' : 'btn-secondary' }}" data-seat="B{{ $i }}" @if($isBooked) disabled style="background-color:#dc3545;border-color:#dc3545;color:white;opacity:0.7;" @endif>B{{ $i }}</button>
+                            <button type="button" class="btn seat {{ $isBooked ? 'btn-danger' : 'btn-secondary' }}" data-seat="B{{ $i }}" @if($isBooked) disabled style="background-color:#dc3545;border-color:#dc3545;" @endif>B{{ $i }}</button>
                         @endfor
                     </div>
                     <div class="mb-3">
                         <label for="price" class="form-label">Price</label>
                         <input type="text" id="price" class="form-control" readonly>
                         <input type="hidden" name="price" id="hidden_price" value="">
+                    </div>
+                    <div class="mb-3">
+                        <label>
+                            <input type="checkbox" name="send_ticket_notification" id="send_ticket_notification" value="1" checked>
+                            Send ticket notification to my email
+                        </label>
                     </div>
                 </div>
                 <div class="modal-footer">

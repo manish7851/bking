@@ -4,8 +4,8 @@
 <div class="container py-4">
     <h2 class="mb-4">🎫 Ticket History</h2>
     @if($bookings->isNotEmpty())
-        <div class="table-responsive">
-            <table class="table table-bordered align-middle">
+        <div class="ticket-history-scroll">
+            <table class="table table-bordered align-middle mb-0" style="min-width: 900px;">
                 <thead class="table-light">
                     <tr>
                         <th>Booking ID</th>
@@ -38,8 +38,18 @@
                 </tbody>
             </table>
         </div>
+        <!-- Move this CSS to your main CSS file for best results -->
+        <style>
+            .ticket-history-scroll {
+                max-height: 400px;
+                overflow-y: auto;
+                overflow-x: auto;
+                width: 100%;
+            }
+        </style>
     @else
         <div class="alert alert-secondary">No ticket history found.</div>
     @endif
 </div>
 @endsection
+

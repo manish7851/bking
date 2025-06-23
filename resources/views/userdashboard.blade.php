@@ -18,10 +18,10 @@
     
     @stack('styles')
 </head>
-<body>
+<body style="overflow :hidden;">
     <div class="d-flex">
         <!-- Sidebar -->
-        <div class="sidebar bg-dark text-white vh-100 d-flex flex-column align-items-center py-4">
+        <div class="sidebar bg-dark text-white  d-flex flex-column align-items-center py-4">
             <h2 class="mb-4" style="font-size:30px; letter-spacing:1px;">🚍 Bus Booking</h2>
             <div class="profile mb-4 text-center">
                 @if(session('customer_id'))
@@ -55,7 +55,7 @@
         </div>
 
         <!-- Main Content -->
-        <div class="main-content flex-grow-1">
+        <div class="main-content flex-grow-1 p-1 d-4">
             <div class="container py-4">
     <h2 class="mb-4">🎫 Your Latest Ticket</h2>
     @if($bookings->isNotEmpty())
@@ -79,7 +79,9 @@
 
     <h3 class="mb-3 mt-5">📜 Ticket History</h3>
     @if($allBookings->isNotEmpty())
-        <div class="table-responsive">
+        <div class="table-responsive"style="webkit-scrollbar {
+  display: none;
+}">
             <table class="table table-bordered align-middle">
                 <thead class="table-light">
                     <tr>

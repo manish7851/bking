@@ -78,7 +78,7 @@
                         </td>
                         <td>Rs{{ number_format($route->price, 2) }}</td>
                         <td>
-                            <a href="{{ route('bookings.create', ['route_id' => $route->id]) }}" class="btn btn-primary btn-sm">Book Now</a>
+                            <a href="{{ route('userbookings.create', ['route_id' => $route->id]) }}" class="btn btn-primary btn-sm">Book Now</a>
                         </td>
                     </tr>
                 @endforeach

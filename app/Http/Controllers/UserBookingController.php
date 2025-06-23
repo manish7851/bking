@@ -28,13 +28,7 @@ class UserBookingController extends Controller
                 $query->where('destination', 'LIKE', '%' . $request->input('destination') . '%');
             }
 
-            // Note: Date filtering on routes doesn't make much sense for bus routes
-            // Routes are generally always available. The date filter might be better applied
-            // to booking dates, but for now we'll keep it for consistency with the original code
-            if ($request->filled('date')) {
-                $query->whereDate('created_at', $request->input('date'));
-            }
-
+            // Do NOT filter by date, as routes are not date-specific
             $routes = $query->get();
 
             // Also get user's existing bookings if they're logged in

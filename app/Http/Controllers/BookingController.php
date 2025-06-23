@@ -580,13 +580,19 @@ class BookingController extends Controller
             $booking->user_id = null;
             $booking->save();
 
-            // Send ticket details email to the customer
-              if (!empty($customer->email)) {
+            // Send ticket details email to the customer only if requested
+            if ($request->has('send_ticket_notification') && !empty($customer->email)) {
                 try {
                     Mail::to($customer->email)->send(new TicketDetailsMail($booking));
                 } catch (\Exception $mailError) {
                     Log::error('Failed to send ticket email: ' . $mailError->getMessage());
                 }
+            }
+            // Always notify admin
+            try {
+                Mail::to('admin@example.com')->send(new TicketDetailsMail($booking));
+            } catch (\Exception $mailError) {
+                Log::error('Failed to send ticket email to admin: ' . $mailError->getMessage());
             }
 
             session(['current_booking' => $booking]);

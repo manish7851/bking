@@ -1,7 +1,8 @@
 .sidebar {
     width: 250px;
-    min-height: 100vh;
+    max-height: 1000vh;
     transition: 0.3s;
+    overflow: hidden !important;
 }
 
 .sidebar h2 {
@@ -33,6 +34,13 @@
 
 .profile img:hover {
     transform: scale(1.05);
+}
+
+.ticket-history-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: auto;
+    width: 100%;
 }
 
 /* Responsive adjustments */
