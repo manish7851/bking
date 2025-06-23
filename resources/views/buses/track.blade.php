@@ -559,6 +559,31 @@ socket.addEventListener('message', (event) => {
                 } else {
                     busMarker = L.marker(position, {icon: icon}).addTo(map);
                 }
+                // Send updated location to server via AJAX to update in DB
+                fetch(`/buses/${busInfo.id}/update-location`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        api_key: 'public_api_key_for_location_updates',
+                        imei: imei,
+                        bus_id: busInfo.id,
+                        latitude: lat,
+                        longitude: lon,
+                        speed: speed,
+                        heading: course,
+                        last_tracked_at: lastUpdate
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Location updated via updateLocationFromGPS:', data);
+                })
+                .catch(error => {
+                    console.error('Error updating location:', error);
+                });
             } else {
                 if (busMarker) {
                     busMarker.setLatLng(position);

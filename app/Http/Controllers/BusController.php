@@ -336,7 +336,7 @@ class BusController extends Controller
     public function updateLocationFromGPS(Request $request)
     {
         // Validate API key
-        if ($request->api_key !== 'BUS-TRACKING-API-KEY-2025') {
+        if ($request->api_key !== 'public_api_key_for_location_updates') { 
             return response()->json(['error' => 'Invalid API key'], 401);
         }
         
