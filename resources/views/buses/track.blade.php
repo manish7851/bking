@@ -78,13 +78,27 @@
                             <h5 class="mb-0">Tracking Options</h5>
                         </div>
                         <div class="card-body">
-                            <form action="{{ route('buses.tracking', $bus->id) }}" method="POST">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="btn {{ $bus->tracking_enabled ? 'btn-warning' : 'btn-success' }} w-100">
-                                    {{ $bus->tracking_enabled ? 'Stop Tracking' : 'Start Tracking' }}
-                                </button>
-                            </form>
+                            <p>
+                                <strong>Tracking:</strong>
+                                <span class="badge {{ $bus->tracking_enabled ? 'bg-success' : 'bg-danger' }}">
+                                    {{ $bus->tracking_enabled ? 'Enabled' : 'Disabled' }}
+                                </span>
+                            </p>
+                             @if($bus->tracking_enabled)
+                                <form id="end-tracking-form" method="POST" action="{{ url('/api/bus/end-tracking') }}">
+                                    @csrf
+                                    <input type="hidden" name="bus_id" value="{{ $bus->id }}">
+                                    <input type="hidden" name="api_key" value="public_api_key_for_location_updates">
+                                    <button type="submit" class="btn btn-danger btn-sm mb-2">End Tracking</button>
+                                </form>
+                            @else
+                                <form id="start-tracking-form" method="POST" action="{{ url('/api/bus/start-tracking') }}">
+                                    @csrf
+                                    <input type="hidden" name="bus_id" value="{{ $bus->id }}">
+                                    <input type="hidden" name="api_key" value="public_api_key_for_location_updates">
+                                    <button type="submit" class="btn btn-success btn-sm mb-2">Start Tracking</button>
+                                </form>
+                            @endif
                             <div class="form-check mt-3">
                                 <input class="form-check-input" type="checkbox" id="show-path" checked>
                                 <label class="form-check-label" for="show-path">
@@ -569,6 +583,7 @@ socket.addEventListener('message', (event) => {
                     },
                     body: JSON.stringify({
                         api_key: 'public_api_key_for_location_updates',
+                        bus_tracking_id: busInfo.current_tracking_id,
                         bus_id: busInfo.id,
                         latitude: lat,
                         longitude: lon,
@@ -648,6 +663,93 @@ socket.addEventListener('error', (err) => {
 //     Speed: ${busData.speed || 0} km/h<br>
 //     Last update: ${new Date(busData.last_tracked_at || Date.now()).toLocaleString()}
 // `);
+</script>
+
+<script>
+    let pathLine;
+
+    // Function to draw the path line from location history
+        function updatePathLine(locations) {
+            if (locations && locations.length > 0) {
+                const points = locations.map(loc => [loc.latitude, loc.longitude]);
+                
+                if (pathLine) {
+                    map.removeLayer(pathLine);
+                }
+                
+                pathLine = L.polyline(points, {
+                    color: 'blue',
+                    weight: 3,
+                    opacity: 0.7,
+                    className: 'history-line'
+                }).addTo(map);
+                
+                // Fit map bounds to include the full path
+                map.fitBounds(pathLine.getBounds(), { padding: [50, 50] });
+            }
+        }
+        
+        // Draw Path feature variables
+        let drawingPath = false;
+        let sourceMarker = null;
+        let destinationMarker = null;
+        let userRoutingControl = null;
+        let drawButton;
+        let pathControl = null;
+
+        // Add Draw Path button
+        const pathButton = L.Control.extend({
+            options: { position: 'topleft' },
+            onAdd: function(map) {
+                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+                drawButton = L.DomUtil.create('a', 'leaflet-control-button', container);
+                drawButton.innerHTML = '<i class="fas fa-route" style="line-height: 30px; color: #666;"></i>';
+                drawButton.title = 'Draw Path';
+                drawButton.style.width = '30px';
+                drawButton.style.height = '30px';
+                drawButton.style.textAlign = 'center';
+                drawButton.style.cursor = 'pointer';
+                drawButton.style.backgroundColor = 'white';
+                drawButton.onclick = function() {
+                    if (!drawingPath) {
+                        startPathDrawing();
+                    } else {
+                        cancelPathDrawing();
+                    }
+                    return false;
+                };
+                return container;
+            }
+        });
+        map.addControl(new pathButton());
+
+    // Function to update the bus marker and path line
+    function updateBusMarkerAndPath(busData, locations) {
+        // updateBusMarker(busData);
+        if (document.getElementById('show-path').checked) {
+            updatePathLine(locations);
+        } else if (pathLine) {
+            map.removeLayer(pathLine);
+            pathLine = null;
+        }
+    }
+    // Fetch location history for the current bus using BusTrackingApiController endpoint
+    function fetchLocationHistory() {
+        fetch(`/api/bus/location/history/${busInfo.id}?bus_id=${busInfo.id}&bus_tracking_id=${busInfo.current_tracking_id}&api_key=BUS-TRACKING-API-KEY-2025`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.locations) {
+                    console.log('Location history:', data.locations);
+                    updateBusMarkerAndPath(busInfo, data.locations);
+                }
+            })
+            .catch(error => console.error('Error fetching location history:', error));
+    }
+
+    // Example usage: fetch location history on page load
+    fetchLocationHistory();
+    // Initial call to set up the bus marker and path
+    // fetchBusData();
 </script>
 </body>
 </html>

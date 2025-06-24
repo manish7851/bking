@@ -140,7 +140,7 @@
                                         @csrf
                                         @method('PATCH')
                                         <button type="submit" class="btn {{ $bus->tracking_enabled ? 'btn-warning' : 'btn-success' }} btn-sm">
-                                            {{ $bus->tracking_enabled ? 'Stop Tracking' : 'Start Tracking' }}
+                                            {{ $bus->tracking_enabled ? 'Disable Tracking' : 'Enable Tracking' }}
                                         </button>
                                     </form>
                                     <form action="{{ route('buses.destroy', $bus->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to delete this bus?');">

@@ -18,6 +18,7 @@ protected $fillable = [
     'heading',
     'last_tracked_at',
     'tracking_enabled',
+    'current_tracking_id',
     'status',
     'custom_path_source',
     'custom_path_destination'
@@ -40,14 +41,14 @@ protected $fillable = [
         return $this->hasMany(BusLocation::class);
     }
     
-    public function startTracking()
+    public function enableTracking()
     {
         $this->tracking_enabled = true;
         $this->last_tracked_at = now();
         $this->save();
     }
 
-    public function stopTracking()
+    public function disableTracking()
     {
         $this->tracking_enabled = false;
         $this->save();
@@ -77,4 +78,8 @@ protected $fillable = [
         return $query->where('tracking_enabled', true);
     }
 
+    public function currentTracking()
+    {
+        return $this->belongsTo(BusTracking::class, 'current_tracking_id');
+    }
 }

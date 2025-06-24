@@ -8,6 +8,7 @@ class BusLocation extends Model
 {
     protected $fillable = [
         'bus_id',
+        'bus_tracking_id',
         'latitude',
         'longitude',
         'speed',
@@ -20,8 +21,8 @@ class BusLocation extends Model
         'recorded_at' => 'datetime',
     ];
 
-    public function bus()
+    public function busTracking()
     {
-        return $this->belongsTo(Bus::class);
+        return $this->belongsTo(BusTracking::class);
     }
 }

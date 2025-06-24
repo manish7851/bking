@@ -66,21 +66,21 @@ class BusController extends Controller
         }
     }
     
-    // Start tracking a bus
-    public function startTracking($id)
-    {
-        $bus = Bus::findOrFail($id);
-        $bus->startTracking();
-        return redirect()->route('buses.index')->with('success', 'Tracking started for bus!');
-    }
+    // // Enable tracking a bus
+    // public function enableTracking($id)
+    // {
+    //     $bus = Bus::findOrFail($id);
+    //     $bus->enableTracking();
+    //     return redirect()->route('buses.index')->with('success', 'Tracking started for bus!');
+    // }
 
-    // Stop tracking a bus
-    public function stopTracking($id)
-    {
-        $bus = Bus::findOrFail($id);
-        $bus->stopTracking();
-        return redirect()->route('buses.index')->with('success', 'Tracking stopped for bus!');
-    }
+    // // Stop tracking a bus
+    // public function disableTracking($id)
+    // {
+    //     $bus = Bus::findOrFail($id);
+    //     $bus->disableTracking();
+    //     return redirect()->route('buses.index')->with('success', 'Tracking stopped for bus!');
+    // }
     
     // Toggle bus tracking status
     public function toggleTracking($id)
