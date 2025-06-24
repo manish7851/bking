@@ -134,6 +134,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<script src="{{ asset('js/polyline-decorator.js') }}"></script>
 <script src="{{ asset('js/route-map.js') }}"></script>
 
 <script>
@@ -143,7 +144,7 @@
     console.log(activeRoute);
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize map
-        const map = L.map('map').setView([27.7172, 85.3240], 12); // Default to Kathmandu
+        // const map = L.map('map').setView([27.7172, 85.3240], 12); // Default to Kathmandu
         
         // Add OpenStreetMap tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -265,7 +266,7 @@
                 `);
                 
                 // Center map on bus position
-                map.setView(position, map.getZoom());
+                // map.setView(position, map.getZoom());
             }
         }
         
@@ -492,7 +493,7 @@
 
 
 <script>
-     const map = L.map('map').setView([27.9634, 84.6548], 7); // Midpoint between Kathmandu and Pokhara
+    //  const map = L.map('map').setView([27.9634, 84.6548], 7); // Midpoint between Kathmandu and Pokhara
 
   // Add OpenStreetMap tiles
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -574,6 +575,58 @@ socket.addEventListener('message', (event) => {
                 } else {
                     busMarker = L.marker(position, {icon: icon}).addTo(map);
                 }
+                if (typeof window.lastBusUpdate === 'undefined') {
+                    window.lastBusUpdate = { time: 0, lat: null, lon: null };
+                }
+                const now = Date.now();
+                const lastTime = window.lastBusUpdate.time;
+                const lastLat = window.lastBusUpdate.lat;
+                const lastLon = window.lastBusUpdate.lon;
+
+                // Calculate distance in meters between two lat/lon points using Haversine formula
+                function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+                    if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return 0;
+                    const R = 6371000; // Radius of the earth in meters
+                    const dLat = (lat2 - lat1) * Math.PI / 180;
+                    const dLon = (lon2 - lon1) * Math.PI / 180;
+                    const a =
+                        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                    return R * c;
+                }
+
+                const timeDiff = (now - lastTime) / 1000; // seconds
+                const moved = getDistanceFromLatLonInMeters(lastLat, lastLon, lat, lon);
+
+                if (timeDiff > 60 && moved > 10) {
+                    window.lastBusUpdate = { time: now, lat: lat, lon: lon };
+                    // Send updated location to server via AJAX to update in DB
+                    fetch(`/api/bus/location/update`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            api_key: 'public_api_key_for_location_updates',
+                            bus_tracking_id: busInfo.current_tracking_id,
+                            bus_id: busInfo.id,
+                            latitude: lat,
+                            longitude: lon,
+                            speed: speed,
+                            heading: course,
+                            last_tracked_at: lastUpdate
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Location updated via updateLocationFromGPS:', data);
+                    })
+                    .catch(error => {
+                        console.error('Error updating location:', error);
+                    });
+                }
                 // Send updated location to server via AJAX to update in DB
                 fetch(`/api/bus/location/update`, {
                     method: 'POST',
@@ -606,7 +659,7 @@ socket.addEventListener('message', (event) => {
                     busMarker = L.marker(position, {icon: busIcon}).addTo(map);
                 }
             }
-            map.setView(position, map.getZoom());
+            // map.setView(position, map.getZoom());
             busMarker.bindPopup(`
                 <b>${busData.bus_name}</b><br>
                 Bus #: ${busData.bus_number}<br>
@@ -686,6 +739,19 @@ socket.addEventListener('error', (err) => {
                 
                 // Fit map bounds to include the full path
                 map.fitBounds(pathLine.getBounds(), { padding: [50, 50] });
+
+                const arrowDecorator = L.polylineDecorator(pathLine, {
+                    patterns: [
+                    {
+                        offset: 0,
+                        repeat: '150px',
+                        symbol: L.Symbol.arrowHead({
+                            pixelSize: 10,
+                            pathOptions: { fillOpacity: 1, weight: 0, color: 'green' }
+                        })
+                    }
+                    ]
+                }).addTo(map);
             }
         }
         
