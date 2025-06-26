@@ -494,6 +494,8 @@
 
 
 <script>
+const map = L.map('map').setView([27.9634, 84.6548], 7); // Midpoint between Kathmandu and Pokhara
+let busMarker;
 function updateBusMarker(busData) {
             // Update bus info panel
             document.getElementById('current-speed').textContent = busData.speed ? busData.speed + ' km/h' : '0 km/h';
@@ -540,7 +542,6 @@ function updateBusMarker(busData) {
             }
         }
         
-const map = L.map('map').setView([27.9634, 84.6548], 7); // Midpoint between Kathmandu and Pokhara
 if(activeRoute != null) {
   // Add OpenStreetMap tiles
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -606,15 +607,14 @@ socket.addEventListener('message', (event) => {
             const position = [lat, lon];
             // const position = [27.7172, 85.3240];
 
-            let busMarker;                
             // Update icon rotation based on heading
             if (/**busData.heading**/ busInfo.tracking_enabled) {
-                const icon = L.divIcon({
-                    className: 'bus-icon-container',
-                    html: `<img src="bus.svg" alt="Bus" style="transform: rotate(${course}deg);" />`,
-                    iconSize: [32, 32],
-                    iconAnchor: [16, 16]
-                });
+                // const icon = L.divIcon({
+                //     className: 'bus-icon-container',
+                //     html: `<img src="/bus.svg" alt="Bus" style="transform: rotate(${course}deg);" />`,
+                //     iconSize: [32, 32],
+                //     iconAnchor: [16, 16]
+                // });
                 updateBusMarker({
                     bus_name: busInfo.bus_name,
                     bus_number: busInfo.bus_number,
@@ -624,12 +624,12 @@ socket.addEventListener('message', (event) => {
                     longitude: lon,
                     heading: course
                 });
-                if (busMarker) {
-                    busMarker.setIcon(icon);
-                    busMarker.setLatLng(position);
-                } else {
-                    busMarker = L.marker(position, {icon: icon}).addTo(map);
-                }
+                // if (busMarker) {
+                //     busMarker.setIcon(icon);
+                //     busMarker.setLatLng(position);
+                // } else {
+                //     busMarker = L.marker(position, {icon: icon}).addTo(map);
+                // }
                 if (typeof window.lastBusUpdate === 'undefined') {
                     window.lastBusUpdate = { time: 0, lat: null, lon: null };
                 }
@@ -708,19 +708,19 @@ socket.addEventListener('message', (event) => {
                     console.error('Error updating location:', error);
                 });
             } else {
-                if (busMarker) {
-                    busMarker.setLatLng(position);
-                } else {
-                    busMarker = L.marker(position, {icon: busIcon}).addTo(map);
-                }
+                // if (busMarker) {
+                //     busMarker.setLatLng(position);
+                // } else {
+                //     busMarker = L.marker(position, {icon: busIcon}).addTo(map);
+                // }
             }
             // map.setView(position, map.getZoom());
-            busMarker.bindPopup(`
-                <b>${busData.bus_name}</b><br>
-                Bus #: ${busData.bus_number}<br>
-                Speed: ${busData.speed || 0} km/h<br>
-                Last update: ${new Date(busData.last_tracked_at || Date.now()).toLocaleString()}
-            `);
+            // busMarker.bindPopup(`
+            //     <b>${busData.bus_name}</b><br>
+            //     Bus #: ${busData.bus_number}<br>
+            //     Speed: ${busData.speed || 0} km/h<br>
+            //     Last update: ${new Date(busData.last_tracked_at || Date.now()).toLocaleString()}
+            // `);
 
             console.log(formatted);
             // output.textContent = formatted;
