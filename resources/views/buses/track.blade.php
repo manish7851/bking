@@ -156,7 +156,7 @@
         let pathLine;
         let busIcon = L.divIcon({
             className: 'bus-icon-container',
-            html: '<img src="/images/bus-icon.png" alt="Bus" style="transform: rotate(0deg);" />',
+            html: '<img src="bus.svg" alt="Bus" style="transform: rotate(0deg);" />',
             iconSize: [32, 32],
             iconAnchor: [16, 16]
         });
@@ -212,7 +212,8 @@
             fetch(`{{ route('buses.locations', $bus->id) }}`)
                 .then(response => response.json())
                 .then(data => {
-                    updateBusMarker(data.bus);
+                    console.log('Bus data:', data);
+                    // updateBusMarker(data.bus);
                     if (document.getElementById('show-path').checked) {
                         updatePathLine(data.locations);
                     } else if (pathLine) {
@@ -223,52 +224,52 @@
                 .catch(error => console.error('Error fetching bus data:', error));
         }
         
-        // Function to update the bus marker on the map
-        function updateBusMarker(busData) {
-            // Update bus info panel
-            document.getElementById('current-speed').textContent = busData.speed ? busData.speed + ' km/h' : '0 km/h';
-            document.getElementById('current-heading').textContent = busData.heading ? busData.heading + '°' : '0°';
-            document.getElementById('last-update').textContent = busData.last_tracked_at ? 
-                new Date(busData.last_tracked_at).toLocaleString() : 'Never';
+        // // Function to update the bus marker on the map
+        // function updateBusMarker(busData) {
+        //     // Update bus info panel
+        //     document.getElementById('current-speed').textContent = busData.speed ? busData.speed + ' km/h' : '0 km/h';
+        //     document.getElementById('current-heading').textContent = busData.heading ? busData.heading + '°' : '0°';
+        //     document.getElementById('last-update').textContent = busData.last_tracked_at ? 
+        //         new Date(busData.last_tracked_at).toLocaleString() : 'Never';
             
-            // If bus has location data, update or create marker
-            if (busData.latitude && busData.longitude) {
-                const position = [busData.latitude, busData.longitude];
+        //     // If bus has location data, update or create marker
+        //     if (busData.latitude && busData.longitude) {
+        //         const position = [busData.latitude, busData.longitude];
                 
-                // Update icon rotation based on heading
-                if (busData.heading) {
-                    const icon = L.divIcon({
-                        className: 'bus-icon-container',
-                        html: `<img src="/images/bus-icon.png" alt="Bus" style="transform: rotate(${busData.heading}deg);" />`,
-                        iconSize: [32, 32],
-                        iconAnchor: [16, 16]
-                    });
+        //         // Update icon rotation based on heading
+        //         if (busData.heading) {
+        //             const icon = L.divIcon({
+        //                 className: 'bus-icon-container',
+        //                 html: `<img src="/bus.svg" alt="Bus" style="transform: rotate(${busData.heading}deg);" />`,
+        //                 iconSize: [32, 32],
+        //                 iconAnchor: [16, 16]
+        //             });
                     
-                    if (busMarker) {
-                        busMarker.setIcon(icon);
-                        busMarker.setLatLng(position);
-                    } else {
-                        busMarker = L.marker(position, {icon: icon}).addTo(map);
-                    }
-                } else {
-                    if (busMarker) {
-                        busMarker.setLatLng(position);
-                    } else {
-                        busMarker = L.marker(position, {icon: busIcon}).addTo(map);
-                    }
-                }
+        //             if (busMarker) {
+        //                 busMarker.setIcon(icon);
+        //                 busMarker.setLatLng(position);
+        //             } else {
+        //                 busMarker = L.marker(position, {icon: icon}).addTo(map);
+        //             }
+        //         } else {
+        //             if (busMarker) {
+        //                 busMarker.setLatLng(position);
+        //             } else {
+        //                 busMarker = L.marker(position, {icon: busIcon}).addTo(map);
+        //             }
+        //         }
                 
-                busMarker.bindPopup(`
-                    <b>${busData.bus_name}</b><br>
-                    Bus #: ${busData.bus_number}<br>
-                    Speed: ${busData.speed || 0} km/h<br>
-                    Last update: ${new Date(busData.last_tracked_at || Date.now()).toLocaleString()}
-                `);
+        //         busMarker.bindPopup(`
+        //             <b>${busData.bus_name}</b><br>
+        //             Bus #: ${busData.bus_number}<br>
+        //             Speed: ${busData.speed || 0} km/h<br>
+        //             Last update: ${new Date(busData.last_tracked_at || Date.now()).toLocaleString()}
+        //         `);
                 
-                // Center map on bus position
-                // map.setView(position, map.getZoom());
-            }
-        }
+        //         // Center map on bus position
+        //         // map.setView(position, map.getZoom());
+        //     }
+        // }
         
         // Function to draw the path line from location history
         function updatePathLine(locations) {
@@ -493,8 +494,54 @@
 
 
 <script>
-     const map = L.map('map').setView([27.9634, 84.6548], 7); // Midpoint between Kathmandu and Pokhara
-
+function updateBusMarker(busData) {
+            // Update bus info panel
+            document.getElementById('current-speed').textContent = busData.speed ? busData.speed + ' km/h' : '0 km/h';
+            document.getElementById('current-heading').textContent = busData.heading ? busData.heading + '°' : '0°';
+            document.getElementById('last-update').textContent = busData.last_tracked_at ? 
+                new Date(busData.last_tracked_at).toLocaleString() : 'Never';
+            
+            // If bus has location data, update or create marker
+            if (busData.latitude && busData.longitude) {
+                const position = [busData.latitude, busData.longitude];
+                
+                // Update icon rotation based on heading
+                if (busData.heading) {
+                    const icon = L.divIcon({
+                        className: 'bus-icon-container',
+                        html: `<img src="/bus.svg" alt="Bus" style="transform: rotate(${busData.heading}deg);" />`,
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    });
+                    
+                    if (busMarker) {
+                        busMarker.setIcon(icon);
+                        busMarker.setLatLng(position);
+                    } else {
+                        busMarker = L.marker(position, {icon: icon}).addTo(map);
+                    }
+                } else {
+                    if (busMarker) {
+                        busMarker.setLatLng(position);
+                    } else {
+                        busMarker = L.marker(position, {icon: busIcon}).addTo(map);
+                    }
+                }
+                
+                busMarker.bindPopup(`
+                    <b>${busData.bus_name}</b><br>
+                    Bus #: ${busData.bus_number}<br>
+                    Speed: ${busData.speed || 0} km/h<br>
+                    Last update: ${new Date(busData.last_tracked_at || Date.now()).toLocaleString()}
+                `);
+                
+                // Center map on bus position
+                // map.setView(position, map.getZoom());
+            }
+        }
+        
+const map = L.map('map').setView([27.9634, 84.6548], 7); // Midpoint between Kathmandu and Pokhara
+if(activeRoute != null) {
   // Add OpenStreetMap tiles
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
@@ -518,7 +565,7 @@
       return L.marker(waypoint.latLng).bindPopup(labels[i]).openPopup();
     }
   }).addTo(map);
-
+}
 // // Center map on bus position
 // map.setView(position, map.getZoom());
 
@@ -554,7 +601,7 @@ socket.addEventListener('message', (event) => {
               Datetime: ${datetime}
               Last Update: ${lastUpdate}
             `;
-            const busData = {heading: 24, bus_number: busInfo.bus_number, bus_name: busInfo.bus_name, speed: speed, last_tracked_at: lastUpdate}
+            const busData = {heading: 24, bus_number: busInfo.bus_number, bus_name: busInfo.bus_name, speed: speed, last_tracked_at: lastUpdate, latitude: lat, longitude: lon, tracking_enabled: busInfo.tracking_enabled, current_tracking_id: busInfo.current_tracking_id, id: busInfo.id};
             // const position = [busData.latitude, busData.longitude];
             const position = [lat, lon];
             // const position = [27.7172, 85.3240];
@@ -564,11 +611,19 @@ socket.addEventListener('message', (event) => {
             if (/**busData.heading**/ busInfo.tracking_enabled) {
                 const icon = L.divIcon({
                     className: 'bus-icon-container',
-                    html: `<img src="/bus.svg" alt="Bus" style="transform: rotate(${course}deg);" />`,
+                    html: `<img src="bus.svg" alt="Bus" style="transform: rotate(${course}deg);" />`,
                     iconSize: [32, 32],
                     iconAnchor: [16, 16]
                 });
-                
+                updateBusMarker({
+                    bus_name: busInfo.bus_name,
+                    bus_number: busInfo.bus_number,
+                    speed: speed,
+                    last_tracked_at: lastUpdate,
+                    latitude: lat,
+                    longitude: lon,
+                    heading: course
+                });
                 if (busMarker) {
                     busMarker.setIcon(icon);
                     busMarker.setLatLng(position);
