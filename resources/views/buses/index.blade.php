@@ -136,6 +136,7 @@
                                 <div class="btn-group" role="group">
                                     <a href="{{ route('buses.edit', $bus->id) }}" class="btn btn-primary btn-sm">Edit</a>
                                     <a href="{{ route('buses.track', $bus->id) }}" class="btn btn-info btn-sm">Map</a>
+                                    <a href="{{ route('buses.tracking.list', $bus->id) }}" class="btn btn-secondary btn-sm">Tracking</a>
                                     <form action="{{ route('buses.tracking', $bus->id) }}" method="POST" style="display:inline-block;">
                                         @csrf
                                         @method('PATCH')

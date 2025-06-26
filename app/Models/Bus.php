@@ -82,4 +82,9 @@ protected $fillable = [
     {
         return $this->belongsTo(BusTracking::class, 'current_tracking_id');
     }
+
+    public function trackings()
+    {
+        return $this->hasMany(\App\Models\BusTracking::class);
+    }
 }

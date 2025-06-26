@@ -236,4 +236,21 @@ class BusTrackingApiController extends Controller
             'message' => 'Tracking ended'
         ]);
     }
+
+    /**
+     * Get all tracking sessions for a specific bus.
+     *
+     * @param int $busId
+     * @return \Illuminate\Http\Response
+     */
+    public function getTrackingList($busId)
+    {
+        $bus = Bus::findOrFail($busId);
+        $trackings = $bus->trackings()->orderByDesc('started_at')->get();
+        return response()->json([
+            'success' => true,
+            'bus_id' => $bus->id,
+            'trackings' => $trackings
+        ]);
+    }
 }

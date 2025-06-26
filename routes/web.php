@@ -231,4 +231,22 @@ Route::match(['post', 'put'], '/profile/update', function (\Illuminate\Http\Requ
     $customer->save();
     return redirect()->route('profile.show')->with('success', 'Profile updated successfully!');
 })->name('profile.update');
+Route::get('/buses/{bus}/trackings', function($bus) {
+    $bus = \App\Models\Bus::findOrFail($bus);
+    $trackings = $bus->trackings()->orderByDesc('started_at')->get();
+    return view('buses.tracking-list', compact('bus', 'trackings'));
+})->name('buses.tracking.list');
+Route::get('/buses/{bus}/trackings/{tracking}', function($bus, $tracking) {
+    $bus = \App\Models\Bus::findOrFail($bus);
+    $tracking = $bus->trackings()->findOrFail($tracking);
+    $locations = $tracking->locations()->orderBy('recorded_at')->get();
+    return view('buses.tracking-view', compact('bus', 'tracking', 'locations'));
+})->name('buses.tracking.show');
+Route::delete('/buses/{bus}/trackings/{tracking}', function($bus, $tracking) {
+    $bus = \App\Models\Bus::findOrFail($bus);
+    $tracking = $bus->trackings()->findOrFail($tracking);
+    $tracking->locations()->delete();
+    $tracking->delete();
+    return redirect()->route('buses.tracking.list', $bus->id)->with('success', 'Tracking deleted successfully.');
+})->name('buses.tracking.delete');
 
