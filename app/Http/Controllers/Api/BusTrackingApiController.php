@@ -44,21 +44,21 @@ class BusTrackingApiController extends Controller
         if ($bus->current_tracking_id) {
             $busTracking = BusTracking::find($bus->current_tracking_id);
             // If not found (shouldn't happen), fallback to create
-            if (!$busTracking) {
-                $busTracking = BusTracking::create([
-                    'bus_id' => $bus->id,
-                    'started_at' => now()
-                ]);
-                $bus->current_tracking_id = $busTracking->id;
-                $bus->save();
-            }
+            // if (!$busTracking) {
+            //     $busTracking = BusTracking::create([
+            //         'bus_id' => $bus->id,
+            //         'started_at' => now()
+            //     ]);
+            //     $bus->current_tracking_id = $busTracking->id;
+            //     $bus->save();
+            // }
         } else {
-            $busTracking = BusTracking::create([
-                'bus_id' => $bus->id,
-                'started_at' => now()
-            ]);
-            $bus->current_tracking_id = $busTracking->id;
-            $bus->save();
+            // $busTracking = BusTracking::create([
+            //     'bus_id' => $bus->id,
+            //     'started_at' => now()
+            // ]);
+            // $bus->current_tracking_id = $busTracking->id;
+            // $bus->save();
         }
 
         $bus->updateLocation(
@@ -156,13 +156,13 @@ class BusTrackingApiController extends Controller
                 'id', 'latitude', 'longitude', 'speed', 'heading', 'recorded_at'
             ]);
         } else {
-            $busTrackings = BusTracking::where('bus_id', $id)->pluck('id');
-            $locations = BusLocation::whereIn('bus_tracking_id', $busTrackings)
-                ->orderBy('recorded_at', 'desc')
-                ->limit($limit)
-                ->get([
-                    'id', 'latitude', 'longitude', 'speed', 'heading', 'recorded_at'
-                ]);
+            // $busTrackings = BusTracking::where('bus_id', $id)->pluck('id');
+            // $locations = BusLocation::whereIn('bus_tracking_id', $busTrackings)
+            //     ->orderBy('recorded_at', 'desc')
+            //     ->limit($limit)
+            //     ->get([
+            //         'id', 'latitude', 'longitude', 'speed', 'heading', 'recorded_at'
+            //     ]);
         }
         return response()->json([
             'success' => true,
@@ -198,11 +198,7 @@ class BusTrackingApiController extends Controller
         $bus->current_tracking_id = $busTracking->id;
         $bus->last_tracked_at = now();
         $bus->save();
-        return response()->json([
-            'success' => true,
-            'message' => 'Tracking started',
-            'tracking_id' => $busTracking->id
-        ]);
+        return redirect()->route('buses.track', ['id' => $bus->id]);
     }
 
     /**
@@ -228,13 +224,11 @@ class BusTrackingApiController extends Controller
             $busTracking->ended_at = now();
             $busTracking->save();
         }
-        $bus->tracking_enabled = false;
+        // $bus->tracking_enabled = false;
         $bus->current_tracking_id = null;
         $bus->save();
-        return response()->json([
-            'success' => true,
-            'message' => 'Tracking ended'
-        ]);
+
+        return redirect()->route('buses.track', ['id' => $bus->id]);
     }
 
     /**

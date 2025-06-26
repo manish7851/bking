@@ -52,6 +52,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- PolylineDecorator for arrows -->
 <script src="https://unpkg.com/leaflet-polylinedecorator@1.7.0/dist/leaflet.polylineDecorator.min.js"></script>
+<script src="{{ asset(path: 'js/polyline-decorator.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         var locations = @json($locationCoords);
@@ -74,15 +75,15 @@
                 {
                     offset: 25,
                     repeat: 50,
-                    symbol: L.Symbol.arrowHead({pixelSize: 12, polygon: false, pathOptions: {stroke: true, color: 'red'}})
+                    symbol: L.Symbol.arrowHead({pixelSize: 12, polygon: false, pathOptions: {stroke: true, color: 'green'}})
                 }
             ]
         }).addTo(map);
         // Markers for start and end
         if (locations.length > 0) {
-            L.marker(locations[0], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('Start');
+            L.marker(locations[0], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('Start');
             if (locations.length > 1) {
-                L.marker(locations[locations.length-1], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('End');
+                L.marker(locations[locations.length-1], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('End');
             }
         }
     });

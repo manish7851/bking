@@ -13,7 +13,8 @@
                 <p><strong>Bus Name:</strong> {{ $bus->bus_name }}</p>
                 <p><strong>Bus Number:</strong> {{ $bus->bus_number }}</p>
                 <p><strong>IMEI:</strong> {{ $bus->imei ?: 'Not set' }}</p>
-                <p><strong>Status:</strong> <span class="badge {{ $bus->tracking_enabled ? 'bg-success' : 'bg-secondary' }}">{{ $bus->tracking_enabled ? 'Tracking Active' : 'Tracking Disabled' }}</span></p>
+                <p><strong>Status:</strong> <span class="badge {{ $bus->tracking_enabled ? 'bg-success' : 'bg-secondary' }}">{{ $bus->tracking_enabled ? 'Tracking Enabled' : 'Tracking Disabled' }}</span></p>
+                <p><strong>Recording:</strong> <span class="badge {{ ($bus->tracking_enabled && $bus->current_tracking_id)? 'bg-success' : 'bg-secondary' }}">{{ $bus->tracking_enabled ? ($bus->current_tracking_id ? 'Recording Active' : 'Not Recording') : 'Recording Inactive' }}</span></p>
                 <p><strong>Last Update:</strong> {{ $bus->last_tracked_at ? $bus->last_tracked_at : 'Never' }}</p>
             </div>
         </div>

@@ -129,14 +129,14 @@
                             </td> -->
                             <td>
                                 <span class="badge {{ $bus->tracking_enabled ? 'bg-success' : 'bg-secondary' }}">
-                                    {{ $bus->tracking_enabled ? 'Active' : 'Inactive' }}
+                                    {{ $bus->tracking_enabled ? 'Enabled' : 'Disabled' }}
                                 </span>
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{{ route('buses.edit', $bus->id) }}" class="btn btn-primary btn-sm">Edit</a>
                                     <a href="{{ route('buses.track', $bus->id) }}" class="btn btn-info btn-sm">Map</a>
-                                    <a href="{{ route('buses.tracking.list', $bus->id) }}" class="btn btn-secondary btn-sm">Tracking</a>
+                                    <a href="{{ route('buses.tracking.list', $bus->id) }}" class="btn btn-secondary btn-sm">Tracking Sessons</a>
                                     <form action="{{ route('buses.tracking', $bus->id) }}" method="POST" style="display:inline-block;">
                                         @csrf
                                         @method('PATCH')

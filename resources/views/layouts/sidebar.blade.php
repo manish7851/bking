@@ -20,7 +20,7 @@
     
     <ul>
         <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-        <li><a href="/dashboard/tracking"><i class="fas fa-satellite-dish"></i> GPS Tracking</a></li>
+        <!-- <li><a href="/dashboard/tracking"><i class="fas fa-satellite-dish"></i> GPS Tracking</a></li> -->
         <li><a href="/buses"><i class="fas fa-bus"></i> Buses</a></li>
         <!-- <li><a href="/map/buses"><i class="fas fa-map-marked-alt"></i> Bus Map</a></li> -->
         <li><a href="/routes"><i class="fas fa-route"></i> Routes</a></li>

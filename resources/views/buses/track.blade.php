@@ -84,22 +84,22 @@
                                     {{ $bus->tracking_enabled ? 'Enabled' : 'Disabled' }}
                                 </span>
                             </p>
-                             @if($bus->tracking_enabled)
-                                <form id="end-tracking-form" method="POST" action="{{ url('/api/bus/end-tracking') }}">
+                             @if($bus->current_tracking_id != null)
+                                <form id="end-tracking-form" method="POST" action="{{ route('bus.end-tracking') }}">
                                     @csrf
                                     <input type="hidden" name="bus_id" value="{{ $bus->id }}">
                                     <input type="hidden" name="api_key" value="public_api_key_for_location_updates">
-                                    <button type="submit" class="btn btn-danger btn-sm mb-2">End Tracking</button>
+                                    <button type="submit" class="btn btn-danger btn-sm mb-2">End Tracking Session</button>
                                 </form>
                             @else
-                                <form id="start-tracking-form" method="POST" action="{{ url('/api/bus/start-tracking') }}">
+                                <form id="start-tracking-form" method="POST" action="{{ route('bus.start-tracking') }}">
                                     @csrf
                                     <input type="hidden" name="bus_id" value="{{ $bus->id }}">
                                     <input type="hidden" name="api_key" value="public_api_key_for_location_updates">
-                                    <button type="submit" class="btn btn-success btn-sm mb-2">Start Tracking</button>
+                                    <button type="submit" class="btn btn-success btn-sm mb-2">Start Tracking Recording</button>
                                 </form>
                             @endif
-                            <div class="form-check mt-3">
+                            <!-- <div class="form-check mt-3">
                                 <input class="form-check-input" type="checkbox" id="show-path" checked>
                                 <label class="form-check-label" for="show-path">
                                     Show Travel Path
@@ -110,7 +110,7 @@
                                 <label class="form-check-label" for="auto-refresh">
                                     Auto Refresh (10s)
                                 </label>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -134,7 +134,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-<script src="{{ asset('js/polyline-decorator.js') }}"></script>
+<script src="{{ asset(path: 'js/polyline-decorator.js') }}"></script>
 <script src="{{ asset('js/route-map.js') }}"></script>
 
 <script>
@@ -215,7 +215,7 @@
                     console.log('Bus data:', data);
                     // updateBusMarker(data.bus);
                     if (document.getElementById('show-path').checked) {
-                        updatePathLine(data.locations);
+                        // updatePathLine(data.locations);
                     } else if (pathLine) {
                         map.removeLayer(pathLine);
                         pathLine = null;
@@ -467,9 +467,9 @@
         }
 
         // Initial data fetch
-        fetchBusData();
-        fetchAndDrawPlannedRoute();
-        loadCustomPath();
+        // fetchBusData();
+        // fetchAndDrawPlannedRoute();
+        // loadCustomPath();
         
         // Auto-refresh toggle
         let refreshInterval;
@@ -774,6 +774,7 @@ socket.addEventListener('error', (err) => {
 </script>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     let pathLine;
 
     // Function to draw the path line from location history
@@ -788,7 +789,7 @@ socket.addEventListener('error', (err) => {
                 pathLine = L.polyline(points, {
                     color: 'blue',
                     weight: 3,
-                    opacity: 0.7,
+                    opacity: 0.8,
                     className: 'history-line'
                 }).addTo(map);
                 
@@ -807,6 +808,11 @@ socket.addEventListener('error', (err) => {
                     }
                     ]
                 }).addTo(map);
+                L.marker(points[0], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('Start');
+                // if (points.length > 1) {
+                //     L.marker(points[points.length-1], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('End');
+                // }
+
             }
         }
         
@@ -868,9 +874,11 @@ socket.addEventListener('error', (err) => {
     }
 
     // Example usage: fetch location history on page load
+    
     fetchLocationHistory();
     // Initial call to set up the bus marker and path
     // fetchBusData();
+});
 </script>
 </body>
 </html>

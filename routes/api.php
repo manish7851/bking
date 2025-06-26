@@ -35,6 +35,6 @@ Route::post('/bus/location/update', [BusTrackingApiController::class, 'updateLoc
 // Route::post('/bus/{id}/update-location', [BusController::class, 'updateLocation']);
 
 // // (Optional) Add more API routes as needed
-Route::post('/bus/start-tracking', [BusTrackingApiController::class, 'startTracking']);
-Route::post('/bus/end-tracking', [BusTrackingApiController::class, 'endTracking']);
+// Route::post('/bus/start-tracking', [BusTrackingApiController::class, 'startTracking']);
+// Route::post('/bus/end-tracking', [BusTrackingApiController::class, 'endTracking']);
 Route::get('/bus/location/history/{id}', [BusTrackingApiController::class, 'getLocationHistory']);

@@ -250,3 +250,7 @@ Route::delete('/buses/{bus}/trackings/{tracking}', function($bus, $tracking) {
     return redirect()->route('buses.tracking.list', $bus->id)->with('success', 'Tracking deleted successfully.');
 })->name('buses.tracking.delete');
 
+// Bus tracking API web routes
+Route::post('/bus/start-tracking', [App\Http\Controllers\Api\BusTrackingApiController::class, 'startTracking'])->name('bus.start-tracking');
+Route::post('/bus/end-tracking', [App\Http\Controllers\Api\BusTrackingApiController::class, 'endTracking'])->name('bus.end-tracking');
+
