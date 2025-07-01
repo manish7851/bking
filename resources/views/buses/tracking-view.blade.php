@@ -1,6 +1,36 @@
 @extends('layouts.dashboard')
 @extends('layouts.sidebar')
-
+<head>
+<style>
+    #map { height: 85vh; }
+    #controls {
+      text-align: center;
+      font-family: sans-serif;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    button, select {
+      margin: 5px;
+      padding: 6px 10px;
+    }
+    #info {
+      margin-top: 10px;
+    }
+    #slider { width: 100% !important; }
+    #timestamp {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-family: sans-serif;
+      font-size: 14px;
+      z-index: 999;
+    }
+</style>
+</head>
 @section('content')
 <div class="container mt-4">
     <h2>Tracking Session #{{ $tracking->id }} for {{ $bus->bus_name }} ({{ $bus->bus_number }})</h2>
@@ -38,9 +68,33 @@
         </div>
     </div>
     <a href="{{ route('buses.tracking.list', $bus->id) }}" class="btn btn-secondary">Back to Tracking Sessions</a>
+    <div id="timestamp">🕒 Timestamp: --</div>
+
+<div id="controls">
+ <input type="range"
+       id="slider"
+       class="slider"
+       min="0"
+       max="0"
+       value="0"
+       step="1"
+       oninput="sliderJump()"
+    />
+ <div id="info"></div>
+</div>
 </div>
 @endsection
-
+@php
+    $path = $locations->map(function($loc) {
+        return [
+            'latitude' => $loc->latitude,
+            'longitude' => $loc->longitude,
+            'speed' => $loc->speed ?? null,
+            'recorded_at' => $loc->recorded_at,
+            'heading' => $loc->heading ?? null,
+        ];
+    })->values();
+@endphp
 @php
     $locationCoords = $locations->map(function($loc) {
         return [$loc->latitude, $loc->longitude];
@@ -54,10 +108,54 @@
 <script src="https://unpkg.com/leaflet-polylinedecorator@1.7.0/dist/leaflet.polylineDecorator.min.js"></script>
 <script src="{{ asset(path: 'js/polyline-decorator.js') }}"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var locations = @json($locationCoords);
+    var path = @json($path);
+    var locations = @json($locationCoords);
+    const latlngs = locations;
+    let index = 0;
+    let marker;
+    let map;
+    let slider;
+    let info;
+    let timestampBox;
+    function interpolateTime(i) {
+            const t1 = new Date(path[i].recorded_at);
+            const t2 = new Date(path[i + 1].recorded_at);
+            return t2 - t1; // ms
+        }
+
+        function computeSpeed(i) {
+            const d = map.distance(latlngs[i], latlngs[i + 1]); // m
+            const t = interpolateTime(i) / 1000; // s
+            return ((d / 1000) / (t / 3600)).toFixed(1); // km/h
+        }
+
+        function computeDirection(i) {
+            const [lat1, lng1] = latlngs[i];
+            const [lat2, lng2] = latlngs[i + 1];
+            const angle = Math.atan2(lng2 - lng1, lat2 - lat1) * (180 / Math.PI);
+            return (angle + 360).toFixed(0) % 360 + "°";
+        }
+
+        function showInfo(i) {
+            if (i >= path.length - 1) return;
+            const t = new Date(path[i + 1].recorded_at).toLocaleTimeString();
+            info.innerHTML = `🕒 ${t} &nbsp;&nbsp; 🚗 ${computeSpeed(i)} km/h &nbsp;&nbsp; ↗ ${computeDirection(i)}`;
+            timestampBox.innerHTML = `🕒 ${t}`;
+        }
+    
+
+        function sliderJump() {
+            index = parseInt(slider.value);
+            console.log(marker);
+            marker.setLatLng(latlngs[index]);
+            showInfo(index);
+        }
+
+  // Add .slideTo support to Leaflet markers
+  document.addEventListener('DOMContentLoaded', function() {
+      
         console.log(locations);
-        var map = L.map('map');
+        map = L.map('map');
         if (locations.length > 0) {
             map.setView(locations[0], 14);
         } else {
@@ -86,5 +184,16 @@
                 L.marker(locations[locations.length-1], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('End');
             }
         }
+        // L.polyline(latlngs, { color: 'gray', dashArray: '5,5', weight: 2 }).addTo(map);
+        L.marker(latlngs[0]).addTo(map).bindPopup("Start");
+        L.marker(latlngs[latlngs.length - 1]).addTo(map).bindPopup("End");
+
+        marker = L.marker(latlngs[0]).addTo(map).bindPopup("Vehicle");
+        marker.setLatLng(latlngs[10])
+        slider = document.getElementById("slider");
+        info = document.getElementById("info");
+        timestampBox = document.getElementById("timestamp");
+
+        slider.max = path.length - 1;
     });
 </script>
