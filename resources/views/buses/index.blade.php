@@ -137,6 +137,7 @@
                                     <a href="{{ route('buses.edit', $bus->id) }}" class="btn btn-primary btn-sm">Edit</a>
                                     <a href="{{ route('buses.track', $bus->id) }}" class="btn btn-info btn-sm">Map</a>
                                     <a href="{{ route('buses.tracking.list', $bus->id) }}" class="btn btn-secondary btn-sm">Tracking Sessons</a>
+                                    @if ($bus->current_tracking_id === null)
                                     <form action="{{ route('buses.tracking', $bus->id) }}" method="POST" style="display:inline-block;">
                                         @csrf
                                         @method('PATCH')
@@ -144,6 +145,11 @@
                                             {{ $bus->tracking_enabled ? 'Disable Tracking' : 'Enable Tracking' }}
                                         </button>
                                     </form>
+                                    @else
+                                        <span type="submit" class="btn btn-success">
+                                            Active Tracking Session     
+                                        </span>
+                                    <@endif
                                     <form action="{{ route('buses.destroy', $bus->id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to delete this bus?');">
                                         @csrf
                                         @method('DELETE')

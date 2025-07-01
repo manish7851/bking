@@ -96,7 +96,7 @@
                                     @csrf
                                     <input type="hidden" name="bus_id" value="{{ $bus->id }}">
                                     <input type="hidden" name="api_key" value="public_api_key_for_location_updates">
-                                    <button type="submit" class="btn btn-success btn-sm mb-2">Start Tracking Recording</button>
+                                    <button type="submit" class="btn btn-success btn-sm mb-2">Start Tracking Session</button>
                                 </form>
                             @endif
                             <!-- <div class="form-check mt-3">
