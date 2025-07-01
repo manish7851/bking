@@ -1,4 +1,3 @@
- 
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,10 +17,10 @@
     
     @stack('styles')
 </head>
-<body style="overflow :hidden;">
-    <div class="d-flex">
+<body style="height: 100vh; overflow: hidden;">
+    <div class="d-flex" style="height: 100vh;">
         <!-- Sidebar -->
-        <div class="sidebar bg-dark text-white  d-flex flex-column align-items-center py-4">
+        <div class="sidebar bg-dark text-white d-flex flex-column align-items-center py-4" style="height: 100vh; min-width: 220px;">
             <h2 class="mb-4" style="font-size:30px; letter-spacing:1px;">🚍 Bus Booking</h2>
             <div class="profile mb-4 text-center">
                 @if(session('customer_id'))
@@ -55,68 +54,73 @@
         </div>
 
         <!-- Main Content -->
-        <div class="main-content flex-grow-1 p-1 d-4">
-            <div class="container py-4">
-    <h2 class="mb-4">🎫 Your Latest Ticket</h2>
-    @if($bookings->isNotEmpty())
-        @php $booking = $bookings->first(); @endphp
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Bus: {{ $booking->bus_name }} ({{ $booking->bus_number }})</h5>
-                <p class="mb-1"><strong>Route:</strong> {{ $booking->source }} → {{ $booking->destination }}</p>
-                <p class="mb-1"><strong>Seat:</strong> <span class="badge bg-primary">{{ $booking->seat }}</span></p>
-                <p class="mb-1"><strong>Price:</strong> Rs. {{ number_format($booking->price, 2) }}</p>
-                <p class="mb-1"><strong>Payment Status:</strong> <span class="badge {{ $booking->status_badge_class }}"><i class="{{ $booking->status_icon }} me-1"></i>{{ $booking->status }}</span></p>
-                <p class="mb-1"><strong>Booked At:</strong> {{ $booking->created_at->format('d M Y, h:i A') }}</p>
-                <a href="{{ route('booking.download', ['id' => $booking->id]) }}" class="btn btn-outline-success mt-2">
-                    <i class="fas fa-download me-1"></i>Download Ticket
-                </a>
-            </div>
-        </div>
-    @else
-        <div class="alert alert-info">No recent bookings found.</div>
-    @endif
+        <div class="main-content flex-grow-1 p-1 d-4" style="overflow-y: auto; height: 100vh;">
+            <div class="container-fluid py-4">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-lg-10">
+                  
+                        @if($bookings->isNotEmpty())
+                            @php $booking = $bookings->first(); @endphp
+                            <div class="card mb-4 shadow-sm" style="width: fit-content;">
+                                <div class="card-body">
+                                          <h2 class="mb-4">🎫 Your Latest Ticket</h2>
+                                    <h5 class="card-title">Bus: {{ $booking->bus_name }} ({{ $booking->bus_number }})</h5>
+                                    <p class="mb-1"><strong>Route:</strong> {{ $booking->source }} → {{ $booking->destination }}</p>
+                                    <p class="mb-1"><strong>Seat:</strong> <span class="badge bg-primary">{{ $booking->seat }}</span></p>
+                                    <p class="mb-1"><strong>Price:</strong> Rs. {{ number_format($booking->price, 2) }}</p>
+                                    <p class="mb-1"><strong>Payment Status:</strong> <span class="badge {{ $booking->status_badge_class }}"><i class="{{ $booking->status_icon }} me-1"></i>{{ $booking->status }}</span></p>
+                                    <p class="mb-1"><strong>Booked At:</strong> {{ $booking->created_at->format('d M Y, h:i A') }}</p>
+                                    <a href="{{ route('booking.download', ['id' => $booking->id]) }}" class="btn btn-outline-success mt-2">
+                                        <i class="fas fa-download me-1"></i>Download Ticket
+                                    </a>
+                                </div>
+                            </div>
+                        @else
+                            <div class="alert alert-info">No recent bookings found.</div>
+                        @endif
 
-    <h3 class="mb-3 mt-5">📜 Ticket History</h3>
-    @if($allBookings->isNotEmpty())
-        <div class="table-responsive"style="webkit-scrollbar {
-  display: none;
-}">
-            <table class="table table-bordered align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Booking ID</th>
-                        <th>Bus</th>
-                        <th>Route</th>
-                        <th>Seat</th>
-                        <th>Price</th>
-                        <th>Status</th>
-                        <th>Booked At</th>
-                        <th>Download</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($allBookings as $b)
-                        <tr>
-                            <td>{{ $b->id }}</td>
-                            <td>{{ $b->bus_name }} ({{ $b->bus_number }})</td>
-                            <td>{{ $b->source }} → {{ $b->destination }}</td>
-                            <td><span class="badge bg-primary">{{ $b->seat }}</span></td>
-                            <td>Rs. {{ number_format($b->price, 2) }}</td>
-                            <td><span class="badge bg-success">Paid</span></td>
-                            <td>{{ $b->created_at->format('d M Y, h:i A') }}</td>
-                            <td>
-                                <a href="{{ route('booking.download', ['id' => $b->id]) }}" class="btn btn-sm btn-outline-success">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>    @else
-        <div class="alert alert-secondary">No ticket history found.</div>
-    @endif
+                        <h3 class="mb-3 mt-5">📜 Ticket History</h3>
+                        @if($allBookings->isNotEmpty())
+                        <div style="margin-top: 20px;">
+                            <div class="ticket-history-scroll table-responsive" style="max-height: 400px; overflow-y: auto; width: fit-content;">
+                                <table class="table table-bordered align-middle mb-0 w-100">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Booking ID</th>
+                                            <th>Bus</th>
+                                            <th>Route</th>
+                                            <th>Seat</th>
+                                            <th>Price</th>
+                                            <th>Status</th>
+                                            <th>Booked At</th>
+                                            <th>Download</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        </div>
+                                        @foreach($allBookings as $b)
+                                            <tr>
+                                                <td>{{ $b->id }}</td>
+                                                <td>{{ $b->bus_name }} ({{ $b->bus_number }})</td>
+                                                <td>{{ $b->source }} → {{ $b->destination }}</td>
+                                                <td><span class="badge bg-primary">{{ $b->seat }}</span></td>
+                                                <td>Rs. {{ number_format($b->price, 2) }}</td>
+                                                <td><span class="badge bg-success">Paid</span></td>
+                                                <td>{{ $b->created_at->format('d M Y, h:i A') }}</td>
+                                                <td>
+                                                    <a href="{{ route('booking.download', ['id' => $b->id]) }}" class="btn btn-sm btn-outline-success">
+                                                        <i class="fas fa-download"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>    @else
+                            <div class="alert alert-secondary">No ticket history found.</div>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -124,6 +128,23 @@
     <!-- Bootstrap and other Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     @stack('scripts')
+
+    <style>
+        .ticket-history-scroll {
+            max-height: 400px;
+            overflow-y: v;
+            width: 100%;
+        }
+        @media (max-width: 991.98px) {
+            .ticket-history-scroll {
+                min-width: 100%;
+                padding-bottom: 1rem;
+            }
+            .ticket-history-scroll table {
+                font-size: 0.95em;
+            }
+        }
+    </style>
 </body>
 </html>
 

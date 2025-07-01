@@ -21,18 +21,20 @@
         <tr><th>Bus Name</th><td>{{ $booking->bus_name }} ({{ $booking->bus_number }})</td></tr>
         <tr>
             <th>Route</th>
-            <td>{{ trim(preg_replace('/[^\p{L}\p{N}\s→-]/u', '', $booking->route->source ?? $booking->source ?? 'N/A')) }} → {{ trim(preg_replace('/[^\p{L}\p{N}\s→-]/u', '', $booking->route->destination ?? $booking->destination ?? 'N/A')) }}</td>
+            <td>{{ $booking->route->source ?? $booking->source ?? 'N/A' }} → {{ $booking->route->destination ?? $booking->destination ?? 'N/A' }}</td>
         </tr>
         <tr><th>Seat</th><td>{{ $booking->seat }}</td></tr>
         <tr><th>Price</th><td>Rs. {{ number_format($booking->price, 2) }}</td></tr>
         <tr><th>Payment Status</th><td>{{ ucfirst($booking->payment_status) }}</td></tr>
         <tr><th>Booked At</th><td>{{ $booking->created_at->format('Y-m-d H:i') }}</td></tr>
     </table>
-    @if($booking->qr_code_path)
     <div class="qr">
-        <img src="{{ public_path('storage/' . $booking->qr_code_path) }}" alt="QR Code" width="120">
+        @if($booking->qr_code_path && file_exists(storage_path('app/public/' . $booking->qr_code_path)))
+            <img src="{{ public_path('storage/' . $booking->qr_code_path) }}" alt="QR Code" width="120">
+        @else
+            <div style="color: #c00; font-size: 14px;">QR code not available</div>
+        @endif
         <div style="font-size:12px; color:#888;">Scan to verify</div>
     </div>
-    @endif
 </body>
 </html>
