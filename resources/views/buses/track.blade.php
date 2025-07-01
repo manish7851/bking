@@ -483,11 +483,11 @@
         }
         
         // Setup event listeners
-        document.getElementById('auto-refresh').addEventListener('change', setAutoRefresh);
-        document.getElementById('show-path').addEventListener('change', fetchBusData);
+        // document.getElementById('auto-refresh').addEventListener('change', setAutoRefresh);
+        // document.getElementById('show-path').addEventListener('change', fetchBusData);
         
         // Initial setup of auto-refresh
-        setAutoRefresh();
+        // setAutoRefresh();
     });
 </script>
 
@@ -654,7 +654,7 @@ socket.addEventListener('message', (event) => {
 
                 const timeDiff = (now - lastTime) / 1000; // seconds
                 const moved = getDistanceFromLatLonInMeters(lastLat, lastLon, lat, lon);
-
+                if(busInfo.current_tracking_id !== null && busInfo.current_tracking_id !== undefined) {
                 if (timeDiff > 60 && moved > 10) {
                     window.lastBusUpdate = { time: now, lat: lat, lon: lon };
                     // Send updated location to server via AJAX to update in DB
@@ -707,6 +707,10 @@ socket.addEventListener('message', (event) => {
                 .catch(error => {
                     console.error('Error updating location:', error);
                 });
+                } else {
+                    console.warn('Current tracking ID is null or undefined');
+                }
+
             } else {
                 // if (busMarker) {
                 //     busMarker.setLatLng(position);
@@ -853,12 +857,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to update the bus marker and path line
     function updateBusMarkerAndPath(busData, locations) {
         // updateBusMarker(busData);
-        if (document.getElementById('show-path').checked) {
+        // if (document.getElementById('show-path').checked) {
             updatePathLine(locations);
-        } else if (pathLine) {
-            map.removeLayer(pathLine);
-            pathLine = null;
-        }
+        // } else if (pathLine) {
+            // map.removeLayer(pathLine);
+            // pathLine = null;
+        // }
     }
     // Fetch location history for the current bus using BusTrackingApiController endpoint
     function fetchLocationHistory() {
