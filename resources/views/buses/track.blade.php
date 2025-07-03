@@ -658,55 +658,55 @@ socket.addEventListener('message', (event) => {
                 if (timeDiff > 60 && moved > 10) {
                     window.lastBusUpdate = { time: now, lat: lat, lon: lon };
                     // Send updated location to server via AJAX to update in DB
-                    fetch(`/api/bus/location/update`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            api_key: 'public_api_key_for_location_updates',
-                            bus_tracking_id: busInfo.current_tracking_id,
-                            bus_id: busInfo.id,
-                            latitude: lat,
-                            longitude: lon,
-                            speed: speed,
-                            heading: course,
-                            last_tracked_at: lastUpdate
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Location updated via updateLocationFromGPS:', data);
-                    })
-                    .catch(error => {
-                        console.error('Error updating location:', error);
-                    });
+                    // fetch(`/api/bus/location/update`, {
+                    //     method: 'POST',
+                    //     headers: {
+                    //         'Content-Type': 'application/json'
+                    //     },
+                    //     body: JSON.stringify({
+                    //         api_key: 'public_api_key_for_location_updates',
+                    //         bus_tracking_id: busInfo.current_tracking_id,
+                    //         bus_id: busInfo.id,
+                    //         latitude: lat,
+                    //         longitude: lon,
+                    //         speed: speed,
+                    //         heading: course,
+                    //         last_tracked_at: lastUpdate
+                    //     })
+                    // })
+                    // .then(response => response.json())
+                    // .then(data => {
+                    //     console.log('Location updated via updateLocationFromGPS:', data);
+                    // })
+                    // .catch(error => {
+                    //     console.error('Error updating location:', error);
+                    // });
                 }
                 // Send updated location to server via AJAX to update in DB
-                fetch(`/api/bus/location/update`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                        // 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({
-                        api_key: 'public_api_key_for_location_updates',
-                        bus_tracking_id: busInfo.current_tracking_id,
-                        bus_id: busInfo.id,
-                        latitude: lat,
-                        longitude: lon,
-                        speed: speed,
-                        heading: course,
-                        last_tracked_at: lastUpdate
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Location updated via updateLocationFromGPS:', data);
-                })
-                .catch(error => {
-                    console.error('Error updating location:', error);
-                });
+                // fetch(`/api/bus/location/update`, {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json'
+                //         // 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                //     },
+                //     body: JSON.stringify({
+                //         api_key: 'public_api_key_for_location_updates',
+                //         bus_tracking_id: busInfo.current_tracking_id,
+                //         bus_id: busInfo.id,
+                //         latitude: lat,
+                //         longitude: lon,
+                //         speed: speed,
+                //         heading: course,
+                //         last_tracked_at: lastUpdate
+                //     })
+                // })
+                // .then(response => response.json())
+                // .then(data => {
+                //     console.log('Location updated via updateLocationFromGPS:', data);
+                // })
+                // .catch(error => {
+                //     console.error('Error updating location:', error);
+                // });
                 } else {
                     console.warn('Current tracking ID is null or undefined');
                 }

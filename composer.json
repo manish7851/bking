@@ -14,7 +14,9 @@
         "endroid/qr-code": "^6.0",
         "laravel/framework": "^12.16",
         "laravel/tinker": "^2.10.1",
-        "remotemerge/esewa-php-sdk": "^3.1"
+        "ratchet/pawl": "^0.4.3",
+        "remotemerge/esewa-php-sdk": "^3.1",
+        "textalk/websocket": "^1.5"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

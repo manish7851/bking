@@ -7,6 +7,7 @@ use App\Models\Bus;
 use App\Models\BusLocation;
 use App\Models\BusTracking;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class BusTrackingApiController extends Controller
 {
@@ -18,6 +19,11 @@ class BusTrackingApiController extends Controller
      */
     public function updateLocation(Request $request)
     {
+         Log::info('bus location update', [
+                    'bus_id' => $request->bus_id,
+                    'request_data' => $request->all()
+                ]);
+                
         $request->validate([
             'bus_id' => 'required|exists:buses,id',
             'latitude' => 'required|numeric',
@@ -78,7 +84,10 @@ class BusTrackingApiController extends Controller
             'recorded_at' => now()
         ]);
         $busTracking->locations()->save($location);
-
+         Log::info('bus location update success', [
+                    'bus_id'=> $request->bus_id,
+                    'location' => $location->all()
+                ]);
         return response()->json([
             'success' => true,
             'message' => 'Location updated successfully',

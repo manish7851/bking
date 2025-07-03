@@ -178,15 +178,15 @@
             ]
         }).addTo(map);
         // Markers for start and end
-        if (locations.length > 0) {
-            L.marker(locations[0], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('Start');
-            if (locations.length > 1) {
-                L.marker(locations[locations.length-1], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('End');
-            }
-        }
+        // if (locations.length > 0) {
+        //     L.marker(locations[0], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('Start');
+        //     if (locations.length > 1) {
+        //         L.marker(locations[locations.length-1], {icon: L.icon({iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [32,32], iconAnchor: [16,32]})}).addTo(map).bindPopup('End');
+        //     }
+        // }
         // L.polyline(latlngs, { color: 'gray', dashArray: '5,5', weight: 2 }).addTo(map);
-        L.marker(latlngs[0]).addTo(map).bindPopup("Start");
-        L.marker(latlngs[latlngs.length - 1]).addTo(map).bindPopup("End");
+        // L.marker(latlngs[0]).addTo(map).bindPopup("Start");
+        // L.marker(latlngs[latlngs.length - 1]).addTo(map).bindPopup("End");
 
         marker = L.marker(latlngs[0]).addTo(map).bindPopup("Vehicle");
         marker.setLatLng(latlngs[10])
