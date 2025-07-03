@@ -29,4 +29,9 @@ class Alert extends Model
     {
         return $this->belongsTo(Bus::class);
     }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
 }

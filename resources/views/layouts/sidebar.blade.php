@@ -25,6 +25,7 @@
         <!-- <li><a href="/map/buses"><i class="fas fa-map-marked-alt"></i> Bus Map</a></li> -->
         <li><a href="/routes"><i class="fas fa-route"></i> Routes</a></li>
         <li><a href="/customers"><i class="fas fa-users"></i> Customers</a></li>
+        <li><a href="{{ route('subscriptions.index') }}"><i class="fas fa-bell"></i> Subscriptions</a></li>
         <li><a href="{{ route('bookings_page') }}"><i class="fas fa-ticket-alt"></i> Bookings</a></li>
         @if(Auth::check())
             <li><a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><i class="fas fa-sign-out-alt"></i> Logout</a></li>

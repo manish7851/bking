@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\BusController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\SubscriptionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -253,4 +254,6 @@ Route::delete('/buses/{bus}/trackings/{tracking}', function($bus, $tracking) {
 // Bus tracking API web routes
 Route::post('/bus/start-tracking', [App\Http\Controllers\Api\BusTrackingApiController::class, 'startTracking'])->name('bus.start-tracking');
 Route::post('/bus/end-tracking', [App\Http\Controllers\Api\BusTrackingApiController::class, 'endTracking'])->name('bus.end-tracking');
+
+Route::resource('subscriptions', SubscriptionController::class);
 
