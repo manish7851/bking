@@ -91,14 +91,39 @@ class SubscriptionController extends Controller
 
     public function update(Request $request, Subscription $subscription)
     {
+        // Delete the old subscription
+        $subscription->delete();
+
         $validated = $request->validate([
             'isadmin' => 'required|boolean',
             'email' => 'required|email',
-            'alert_id' => 'required|exists:alerts,id',
+            'route_id' => 'required|exists:routes,id',
             'delivered' => 'required|boolean',
         ]);
-        $subscription->update($validated);
-        return redirect()->route('subscriptions.index')->with('success', 'Subscription updated successfully.');
+
+        $route = \App\Models\Route::with('bus')->findOrFail($request->route_id);
+        $alerts = [];
+
+        if ($request->has('alert_source')) {
+            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_exit', $route->source_latitude, $route->source_longitude);
+        }
+        if ($request->has('alert_destination')) {
+            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_entry', $route->destination_latitude, $route->destination_longitude);
+        }
+        if ($request->has('alert_zone') && $request->zone_latitude && $request->zone_longitude) {
+            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_entry', $request->zone_latitude, $request->zone_longitude);
+        }
+
+        foreach ($alerts as $alert) {
+            Subscription::create([
+                'isadmin' => $validated['isadmin'],
+                'email' => $validated['email'],
+                'alert_id' => $alert->id,
+                'delivered' => $validated['delivered'],
+            ]);
+        }
+
+        return redirect()->route('subscriptions.index')->with('success', 'Subscription(s) updated successfully.');
     }
 
     public function destroy(Subscription $subscription)

@@ -13,7 +13,19 @@
         <strong>Email:</strong> {{ $subscription->email }}
     </div>
     <div class="mb-3">
-        <strong>Alert ID:</strong> {{ $subscription->alert_id }}
+        <strong>Alert Type:</strong> {{ $subscription->alert->type ?? '-' }}
+    </div>
+    <div class="mb-3">
+        <strong>Bus:</strong> {{ $subscription->alert->bus->bus_name ?? '-' }}
+    </div>
+    <div class="mb-3">
+        <strong>Route:</strong> {{ $subscription->alert->bus->routes->firstWhere('source_latitude', $subscription->alert->latitude)?->routeName ?? '-' }}
+    </div>
+    <div class="mb-3">
+        <strong>Latitude:</strong> {{ $subscription->alert->latitude ?? '-' }}
+    </div>
+    <div class="mb-3">
+        <strong>Longitude:</strong> {{ $subscription->alert->longitude ?? '-' }}
     </div>
     <div class="mb-3">
         <strong>Delivered:</strong> {{ $subscription->delivered ? 'Yes' : 'No' }}
