@@ -94,6 +94,7 @@
                                             <th>Status</th>
                                             <th>Booked At</th>
                                             <th>Download</th>
+                                            <th>Track Bus</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -111,6 +112,20 @@
                                                     <a href="{{ route('booking.download', ['id' => $b->id]) }}" class="btn btn-sm btn-outline-success">
                                                         <i class="fas fa-download"></i>
                                                     </a>
+                                                </td>
+                                    
+                                                <td>
+                                                    @php
+                                                        $activeRoute = $b->bus->routes()
+                                                        ->whereDate('trip_date', '>=', now()->format('Y-m-d'))
+                                                        ->orderBy('trip_date')
+                                                        ->first();
+                                                    @endphp
+                                                    @if($activeRoute && $activeRoute->id === $b->route_id)
+                                                        <a href="{{ route('booking.trackBusActiveRoute', ['bus_id' => $b->bus->id, 'active_route_id' => $b->route->id]) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-map-marker-alt"></i> Track Bus
+                                                        </a>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach

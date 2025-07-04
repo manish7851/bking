@@ -71,6 +71,7 @@ Route::post('/bookings/store', [App\Http\Controllers\BookingController::class, '
 Route::get('/check-seat-availability', [BookingController::class, 'checkSeatAvailability'])->name('check.seat.availability');
 Route::post('/check-seat-availability', [BookingController::class, 'checkSeatAvailability'])->name('check.seat.availability.post');
 Route::get('/booking/download/{id}', [App\Http\Controllers\TicketController::class, 'download'])->name('booking.download');
+Route::get('/track/{bus_id}/route/{active_route_id}', [App\Http\Controllers\TicketController::class, 'trackBusRoute'])->name('booking.trackBusActiveRoute');
 Route::delete('/bookings/{id}', [BookingController::class, 'destroy'])->name('bookings.destroy');
 Route::put('/bookings/{id}', [App\Http\Controllers\BookingController::class, 'update'])->name('bookings.update');
 Route::get('/buses', [App\Http\Controllers\BusController::class, 'index'])->name('buses.index');
