@@ -35,10 +35,9 @@ class ListenToGPSUpdates extends Command
                         $busData = $data['data'][0] ?? $data['data'];
 
                         if (!isset($busData['imei'], $busData['lat'], $busData['lon'])) return;
-                        echo "Connecting to WebSocket server...\n";
 
                         $busInfo = self::getBusInfoByIMEI($busData['imei']);
-                        if(busInfo === null) {
+                        if($busInfo === null) {
                             FacadesLog::warning('No bus found for IMEI', [
                                 'imei' => $busData['imei']
                             ]);
@@ -76,8 +75,9 @@ class ListenToGPSUpdates extends Command
                             'response' => $response,
                             'bus_id' => $busInfo->id
                         ]);
+                        self::handleZoneTransitions($busInfo, $busData);
 
-                        echo "Updated location for {$busInfo->bus_number}\n";
+                        // echo "Updated location for {$busInfo->bus_number}\n";
                     });
 
                     $conn->on('close', function ($code = null, $reason = null) use (&$reconnect, $loop) {
@@ -91,7 +91,6 @@ class ListenToGPSUpdates extends Command
                 }
             );
         };
-
         $reconnect();
         $loop->run();
         return 0;
@@ -116,5 +115,53 @@ class ListenToGPSUpdates extends Command
              cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) * sin($dLon / 2);
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
         return $R * $c;
+    }
+    public static function handleZoneTransitions($busInfo, $busData)
+    {
+        $zones = \DB::table('alerts')
+            ->where('bus_id', $busInfo->id)
+            ->get();
+        foreach ($zones as $zone) {
+            $lat = $zone->latitude ?? 0;
+            $lon = $zone->longitude ?? 0;
+            $radius = 300;/*$busInfo->source_radius ?? 1000;*/ // Default to 1000 meters
+            $transition = self::checkZoneTransitions(
+                $zone->id, 
+                $busInfo->id, $busData['lat'], $busData['lon'],
+                $lat, $lon, $radius
+            );
+            
+            if ($zone->type === 'geofence_exit' && $transition === 'exited') { 
+                FacadesLog::info("\n\n\nBus {$busInfo->bus_number} exited zone {$zone->id}");
+            }
+            if ($zone->type === 'geofence_entry' && $transition === 'entered') {
+                FacadesLog::info("\n\n\nBus {$busInfo->bus_number} entered zone {$zone->id}");
+            }
+        }
+    }
+    public static function checkZoneTransitions($zoneId, $busId, $lat, $lon, $centerLat, $centerLon, $radiusMeters)
+    {
+        $cacheKey = "zone_alert_{$zoneId}";
+        $wasInside = Cache::get($cacheKey, false); // false means previously outside
+
+        $distance = self::getDistance($lat, $lon, $centerLat, $centerLon);
+        FacadesLog::info(message: "\nzoneId:{$zoneId}: {$distance}");
+        $isInside = $distance <= $radiusMeters;
+
+        if ($isInside && !$wasInside) {
+            // Entered zone
+            echo "\n\n {$distance} {$radiusMeters}-{$isInside}-{$wasInside}";
+            Cache::put($cacheKey, true, now()->addHours(1));
+            return 'entered';
+        }
+
+        if (!$isInside && $wasInside) {
+            // Exited zone
+        echo "\n\n {$distance} {$radiusMeters}-{$isInside}-{$wasInside}";
+            Cache::put($cacheKey, false, now()->addHours(1));
+            return 'exited';
+        }
+
+        return false; // No transition
     }
 }
