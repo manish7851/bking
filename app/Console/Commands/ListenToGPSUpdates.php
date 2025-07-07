@@ -133,9 +133,76 @@ class ListenToGPSUpdates extends Command
             
             if ($zone->type === 'geofence_exit' && $transition === 'exited') { 
                 FacadesLog::info("\n\n\nBus {$busInfo->bus_number} exited zone {$zone->id}");
+                $subscriptions = \DB::table('subscriptions')
+                    ->where('alert_id', $zone->id)
+                    ->get();
+
+                foreach ($subscriptions as $subscription) {
+                    FacadesLog::info("Processing subscription", [
+                        'subscription_id' => $subscription->id,
+                        'zone_alert_id' => $zone->id,
+                        'bus_id' => $busInfo->id
+                    ]);
+                    try {
+                        $email = new \SendGrid\Mail\Mail();
+                        $email->setFrom("gmanish092@gmail.com", "Bus Booking");
+                        $email->setSubject("Bus {$busInfo->bus_number} exited zone {$zone->id}");
+                        $email->addTo($subscription->email, $subscription->name ?? '');
+                        $email->addContent(
+                            "text/plain",
+                            "Bus {$busInfo->bus_number} has exited the geofence zone (ID: {$zone->id})."
+                        );
+
+                        $sendgrid = new \SendGrid(env('SENDGRID_API'));
+                        $response = $sendgrid->send($email);
+                        FacadesLog::info("SendGrid email sent", [
+                            'subscription_id' => $subscription->id,
+                            'response_status' => $response->statusCode()
+                        ]);
+                    } catch (\Exception $e) {
+                        FacadesLog::error("SendGrid email failed", [
+                            'subscription_id' => $subscription->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
             }
             if ($zone->type === 'geofence_entry' && $transition === 'entered') {
                 FacadesLog::info("\n\n\nBus {$busInfo->bus_number} entered zone {$zone->id}");
+                $subscriptions = \DB::table('subscriptions')
+                    ->where('alert_id', $zone->id)
+                    ->get();
+
+                foreach ($subscriptions as $subscription) {
+                    FacadesLog::info("Processing subscription", [
+                        'subscription_id' => $subscription->id,
+                        'zone_alert_id' => $zone->id,
+                        'bus_id' => $busInfo->id
+                    ]);
+
+                    try {
+                        $email = new \SendGrid\Mail\Mail();
+                        $email->setFrom("gmanish092@gmail.com", "Bus Booking");
+                        $email->setSubject("Bus {$busInfo->bus_number} entered zone {$zone->id}");
+                        $email->addTo($subscription->email, $subscription->name ?? '');
+                        $email->addContent(
+                            "text/plain",
+                            "Bus {$busInfo->bus_number} has entered the geofence zone (ID: {$zone->id})."
+                        );
+
+                        $sendgrid = new \SendGrid(env('SENDGRID_API'));
+                        $response = $sendgrid->send($email);
+                        FacadesLog::info("SendGrid email sent", [
+                            'subscription_id' => $subscription->id,
+                            'response_status' => $response->statusCode()
+                        ]);
+                    } catch (\Exception $e) {
+                        FacadesLog::error("SendGrid email failed", [
+                            'subscription_id' => $subscription->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
             }
         }
     }

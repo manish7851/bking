@@ -208,9 +208,11 @@ ws.onmessage = function (event) {
   if (imei !== document.getElementById('imei').value) return;
 
   if (!vehicleMarker.marker) {
+    console.log('Adding vehicle marker', imei, lat, lon);
     vehicleMarker.marker = L.marker([lat, lon]).addTo(map);
     map.setView([lat, lon], 15);
   } else {
+    console.log('Updating vehicle marker', imei, lat, lon);
     vehicleMarker.marker.setLatLng([lat, lon]);
   }
 
