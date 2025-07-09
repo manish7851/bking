@@ -11,14 +11,25 @@ class SubscriptionController extends Controller
 {
     public function index()
     {
-        $subscriptions = Subscription::with('alert')->get();
+        $customerId = session('customer_id');
+        $user = \App\Models\Customer::find($customerId);
+        $email = $user->email ?? null;
+        if (!$email) {
+            $subscriptions = Subscription::with('alert')->get();
+        } else {
+            $subscriptions = Subscription::where('email', $email)->with('alert')->get();
+        }
         return view('subscriptions.index', compact('subscriptions'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $activeRoute = null;
+        if ($request->has('active_route_id')) {
+            $activeRoute = Route::with('bus')->find($request->input('active_route_id'));
+        }
         $routes = Route::with('bus')->get();
-        return view('subscriptions.create', compact('routes'));
+        return view('subscriptions.create', compact('routes', 'activeRoute'));
     }
 
     public function store(Request $request)

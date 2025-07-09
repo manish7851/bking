@@ -81,6 +81,11 @@
                         <i class="fas fa-ticket-alt me-2"></i> My Bookings
                     </a>
                 </li>
+                                <li class="nav-item mb-2">
+                    <a href="{{ route('subscriptions.index') }}" class="nav-link text-white px-3 py-2 rounded {{ request()->routeIs('subscriptions.index') ? 'bg-primary' : '' }}">
+                        <i class="fas fa-ticket-alt me-2"></i> My Zone Notifications
+                    </a>
+                </li>
                 <li class="nav-item mb-2">
                     <a href="{{ route('booking.verify.form') }}" class="nav-link text-white px-3 py-2 rounded {{ request()->routeIs('booking.verify*') ? 'bg-primary' : '' }}">
                         <i class="fas fa-qrcode me-2"></i> Verify Ticket

@@ -27,17 +27,35 @@
             <label for="email" class="form-label">Email</label>
             <input type="email" name="email" id="email" class="form-control" required>
         </div>
-        <div class="mb-3">
-            <label for="route_id" class="form-label">Route</label>
-            <select name="route_id" id="route_id" class="form-control" required>
-                <option value="">Select Route</option>
-                @foreach($routes as $route)
-                    <option value="{{ $route->id }}" data-source-lat="{{ $route->source_latitude }}" data-source-lng="{{ $route->source_longitude }}" data-dest-lat="{{ $route->destination_latitude }}" data-dest-lng="{{ $route->destination_longitude }}" data-bus-id="{{ $route->bus_id }}">
-                        {{ $route->routeName }} (Bus: {{ $route->bus->bus_name ?? $route->bus_id }})
-                    </option>
-                @endforeach
-            </select>
-        </div>
+        @if(isset($activeRoute))
+            <div class="mb-3">
+                <label class="form-label">Route Details</label>
+                <div class="p-2 border rounded bg-light">
+                    <strong>Source:</strong> {{ $activeRoute->source }}<br>
+                    <strong>Destination:</strong> {{ $activeRoute->destination }}<br>
+                    <strong>Trip Date:</strong>
+                    @php
+                        $dateObj = \Carbon\Carbon::parse($activeRoute->trip_date);
+                        $formattedDate = $dateObj->format('F j, Y');
+                    @endphp
+                    {{ $formattedDate }}
+                </div>
+                <input type="hidden" name="route_id" value="{{ $activeRoute->id }}">
+            </div>
+        @else
+            <div class="mb-3">
+                <label for="route_id" class="form-label">Route</label>
+                <select name="route_id" id="route_id" class="form-control" required>
+                    <option value="">Select Route</option>
+                    @foreach($routes as $route)
+                        <option value="{{ $route->id }}" data-source-lat="{{ $route->source_latitude }}" data-source-lng="{{ $route->source_longitude }}" data-dest-lat="{{ $route->destination_latitude }}" data-dest-lng="{{ $route->destination_longitude }}" data-bus-id="{{ $route->bus_id }}">
+                            {{ $route->routeName }} (Bus: {{ $route->bus->bus_name ?? $route->bus_id }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
+        
         <div class="mb-3">
             <label class="form-label">Alert Type</label><br>
             <input type="checkbox" name="alert_source" id="alert_source" value="1"> <label for="alert_source">Source</label>
@@ -79,6 +97,21 @@
 
 <script>
     const routes = @json($routes);
+    const activeRoute = @json($activeRoute ?? null);
+    function formattedDate(tripDate) {
+        if (tripDate) {
+            const dateObj = new Date(tripDate);
+            return dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+        return '';
+    }
+    if (activeRoute) {
+        document.getElementById('route_id').value = activeRoute.id;
+        document.getElementById('message').value = `From ${activeRoute.source} to ${activeRoute.destination} on ${activeRoute.trip_date}`;
+        document.getElementById('message').value =
+            `From ${activeRoute.source} to ${activeRoute.destination} on ${formattedDate(activeRoute.trip_date)}`;
+
+    } else {
     document.getElementById('route_id').addEventListener('change', function() {
         const selected = document.getElementById('route_id').value;
         const selectedRoute = routes.find(r => r.id == selected);
@@ -91,22 +124,11 @@
         let tripDate = selectedRoute.trip_date;
         // Try to get trip date from a date input if available, otherwise use today
         // Format tripDate as human readable (e.g., YYYY-MM-DD to "June 5, 2024")
-        let formattedDate = '';
-        if (tripDate) {
-            const dateObj = new Date(tripDate);
-            if (!isNaN(dateObj)) {
-            formattedDate = dateObj.toLocaleDateString(undefined, {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            } else {
-            formattedDate = tripDate;
-            }
-        }
         document.getElementById('message').value =
-            `From ${source} to ${destination} on ${formattedDate}`;
+            `From ${source} to ${destination} on ${formattedDate(tripDate)}`;
     });
+    }
+
     document.getElementById('alert_zone').addEventListener('change', function() {
         document.getElementById('zone-coords').style.display = this.checked ? 'block' : 'none';
     });

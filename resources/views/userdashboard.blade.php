@@ -50,6 +50,11 @@
                         <i class="fas fa-ticket-alt me-2"></i> My Bookings
                     </a>
                 </li>
+                <li class="nav-item mb-2">
+                    <a href="{{ route('subscriptions.index') }}" class="nav-link text-white px-3 py-2 rounded {{ request()->routeIs('subscriptions.index') ? 'bg-primary' : '' }}">
+                        <i class="fas fa-ticket-alt me-2"></i> My Zone Notifications
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -124,6 +129,19 @@
                                                     @if($activeRoute && $activeRoute->id === $b->route_id)
                                                         <a href="{{ route('booking.trackBusActiveRoute', ['bus_id' => $b->bus->id, 'active_route_id' => $b->route->id]) }}" class="btn btn-sm btn-outline-primary">
                                                             <i class="fas fa-map-marker-alt"></i> Track Bus
+                                                        </a>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @php
+                                                        $activeRoute = $b->bus->routes()
+                                                        ->whereDate('trip_date', '>=', now()->format('Y-m-d'))
+                                                        ->orderBy('trip_date')
+                                                        ->first();
+                                                    @endphp
+                                                    @if($activeRoute && $activeRoute->id === $b->route_id)
+                                                        <a href="{{ route('subscriptions.create', ['active_route_id' => $b->route->id]) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-map-marker-alt"></i> Create Zone Notification
                                                         </a>
                                                     @endif
                                                 </td>
