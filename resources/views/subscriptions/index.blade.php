@@ -28,7 +28,6 @@
                     <td>{{ $subscription->delivered ? 'Yes' : 'No' }}</td>
                     <td>
                         <a href="{{ route('subscriptions.show', $subscription) }}" class="btn btn-info btn-sm">View</a>
-                        <a href="{{ route('subscriptions.edit', $subscription) }}" class="btn btn-warning btn-sm">Edit</a>
                         <form action="{{ route('subscriptions.destroy', $subscription) }}" method="POST" style="display:inline-block;">
                             @csrf
                             @method('DELETE')
