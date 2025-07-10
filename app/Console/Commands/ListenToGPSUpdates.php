@@ -144,6 +144,12 @@ class ListenToGPSUpdates extends Command
                         'zone_alert_id' => $zone->id,
                         'bus_id' => $busInfo->id
                     ]);
+                    if($subscription->delivered) {
+                        FacadesLog::info("Subscription already delivered", [
+                            'subscription_id' => $subscription->id
+                        ]);
+                        continue; // Skip if already delivered
+                    }
                     try {
                         $email = new \SendGrid\Mail\Mail();
                         $email->setFrom("gmanish092@gmail.com", "Bus Booking");
@@ -186,7 +192,12 @@ class ListenToGPSUpdates extends Command
                         'zone_alert_id' => $zone->id,
                         'bus_id' => $busInfo->id
                     ]);
-
+                    if($subscription->delivered) {
+                        FacadesLog::info("Subscription already delivered", [
+                            'subscription_id' => $subscription->id
+                        ]);
+                        continue; // Skip if already delivered
+                    }
                     try {
                         $email = new \SendGrid\Mail\Mail();
                         $email->setFrom("gmanish092@gmail.com", "Bus Booking");
