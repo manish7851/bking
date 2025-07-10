@@ -15,7 +15,7 @@ class SubscriptionController extends Controller
         $user = \App\Models\Customer::find($customerId);
         $email = $user->email ?? null;
         if (!$email) {
-            $subscriptions = Subscription::with('alert')->get();
+            $subscriptions = Subscription::where('isAdmin', true)->with('alert')->get();
         } else {
             $subscriptions = Subscription::where('email', $email)->with('alert')->get();
         }
@@ -34,6 +34,8 @@ class SubscriptionController extends Controller
 
     public function store(Request $request)
     {
+        $customerId = session('customer_id');
+
         $validated = $request->validate([
             'isadmin' => 'required|boolean',
             'email' => 'required|email',
@@ -60,7 +62,7 @@ class SubscriptionController extends Controller
         // Create a subscription for each alert
         foreach ($alerts as $alert) {
             Subscription::create([
-                'isadmin' => $validated['isadmin'],
+                'isadmin' => $customerId ? false : true,
                 'email' => $validated['email'],
                 'alert_id' => $alert->id,
                 'delivered' => $validated['delivered'],

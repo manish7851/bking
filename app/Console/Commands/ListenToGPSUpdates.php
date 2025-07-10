@@ -8,6 +8,7 @@ use Ratchet\Client\Connector;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log as FacadesLog;
+use Illuminate\Support\Facades\DB;
 use React\EventLoop\Factory;
 
 class ListenToGPSUpdates extends Command
@@ -82,7 +83,7 @@ class ListenToGPSUpdates extends Command
 
                     $conn->on('close', function ($code = null, $reason = null) use (&$reconnect, $loop) {
                         echo "Connection closed ({$code} - {$reason}) - Reconnecting in 5s...\n";
-                        $loop->addTimer(5, fn() => $reconnect());
+                        $loop->addTimer(5, function() use (&$reconnect) { $reconnect(); });
                     });
                 },
                 function (\Exception $e) use ($loop, &$reconnect) {
@@ -159,6 +160,12 @@ class ListenToGPSUpdates extends Command
                             'subscription_id' => $subscription->id,
                             'response_status' => $response->statusCode()
                         ]);
+
+                        if (in_array($response->statusCode(), [200, 201, 202])) {
+                            \DB::table('subscriptions')
+                                ->where('id', $subscription->id)
+                                ->update(['delivered' => true]);
+                        }
                     } catch (\Exception $e) {
                         FacadesLog::error("SendGrid email failed", [
                             'subscription_id' => $subscription->id,
@@ -196,6 +203,11 @@ class ListenToGPSUpdates extends Command
                             'subscription_id' => $subscription->id,
                             'response_status' => $response->statusCode()
                         ]);
+                        if (in_array($response->statusCode(), [200, 201, 202])) {
+                            \DB::table('subscriptions')
+                                ->where('id', $subscription->id)
+                                ->update(['delivered' => true]);
+                        }
                     } catch (\Exception $e) {
                         FacadesLog::error("SendGrid email failed", [
                             'subscription_id' => $subscription->id,

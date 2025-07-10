@@ -11,7 +11,6 @@
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Is Admin</th>
                 <th>Email</th>
                 <th>Alert</th>
                 <th>Delivered</th>
@@ -22,7 +21,6 @@
             @foreach($subscriptions as $subscription)
                 <tr>
                     <td>{{ $subscription->id }}</td>
-                    <td>{{ $subscription->isadmin ? 'Yes' : 'No' }}</td>
                     <td>{{ $subscription->email }}</td>
                     <td>{{ $subscription->alert->id ?? '-' }}</td>
                     <td>{{ $subscription->delivered ? 'Yes' : 'No' }}</td>
