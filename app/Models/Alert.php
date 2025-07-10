@@ -17,7 +17,8 @@ class Alert extends Model
         'severity', // 'info', 'warning', 'critical'
         'is_read',
         'latitude',
-        'longitude'
+        'longitude',
+        'location_name'
     ];
 
     protected $casts = [

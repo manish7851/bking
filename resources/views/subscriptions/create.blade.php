@@ -25,7 +25,7 @@
         <input type="hidden" name="isadmin" id="isadmin" value="0" class="form-control" required/>
         <div class="mb-3">
             <label for="email" class="form-label">Email</label>
-            <input type="email" name="email" id="email" class="form-control" required>
+            <input type="email" name="email" id="email" class="form-control" value="{{ session()->has('customer_id') ? Auth::guard('customer')->user()->email : '' }}" {{ session()->has('customer_id') ? 'readonly' : '' }} required>
         </div>
         @if(isset($activeRoute))
             <div class="mb-3">
@@ -40,7 +40,7 @@
                     @endphp
                     {{ $formattedDate }}
                 </div>
-                <input type="hidden" name="route_id" value="{{ $activeRoute->id }}">
+                <input type="hidden" name="route_id" id="route_id" value="{{ $activeRoute->id }}">
             </div>
         @else
             <div class="mb-3">
@@ -63,14 +63,14 @@
             <input type="checkbox" name="alert_zone" id="alert_zone" value="1"> <label for="alert_zone">Alert Zone</label>
         </div>
         <div class="mb-3" id="zone-coords" style="display:none;">
-            <label>Address:</label><br>
+            <label>Alert Zone Address Search:</label><br>
             <input type="text" id="address" placeholder="Search or pick on map..." autocomplete="off"><br><br>
-
+            OR <button type="button" onclick="openMap()">Pick on Map</button><br/>
             <label for="zone_latitude" class="form-label">Zone Latitude</label>
             <input type="text" name="zone_latitude" id="zone_latitude" class="form-control">
             <label for="zone_longitude" class="form-label">Zone Longitude</label>
             <input type="text" name="zone_longitude" id="zone_longitude" class="form-control">
-            <button type="button" onclick="openMap()">Pick on Map</button>
+            <input type="hidden" name="alert_zone_address" id="alert_zone_address">
         </div>
         <input type="hidden" name="message" id="message" value="" class="form-control">
         <input type="hidden" name="delivered" id="delivered" value="0">
@@ -185,6 +185,7 @@
         document.getElementById('address').value = selectedAddr;
         document.getElementById('zone_latitude').value = selectedLatLng.lat.toFixed(6);
         document.getElementById('zone_longitude').value = selectedLatLng.lng.toFixed(6);
+        document.getElementById('alert_zone_address').value = selectedAddr;
     }
     closeMap();
     }
@@ -233,12 +234,14 @@
         div.addEventListener('click', () => {
         addressInput.value = div.textContent;
         suggestionBox.innerHTML = '';
+        document.getElementById('alert_zone_address').value = div.textContent;
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(div.textContent)}`)
             .then(res => res.json())
             .then(data => {
             if (data[0]) {
                 document.getElementById('latitude').value = data[0].lat;
                 document.getElementById('longitude').value = data[0].lon;
+
             }
             });
         });

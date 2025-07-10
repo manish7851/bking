@@ -157,7 +157,7 @@ class ListenToGPSUpdates extends Command
                         $email->addTo($subscription->email, $subscription->name ?? '');
                         $email->addContent(
                             "text/plain",
-                            "Bus {$busInfo->bus_number} has exited the geofence zone (ID: {$zone->id})."
+                            "Bus {$busInfo->bus_number} has exited {$zone->location_name}."
                         );
 
                         $sendgrid = new \SendGrid(env('SENDGRID_API'));
@@ -205,7 +205,7 @@ class ListenToGPSUpdates extends Command
                         $email->addTo($subscription->email, $subscription->name ?? '');
                         $email->addContent(
                             "text/plain",
-                            "Bus {$busInfo->bus_number} has entered the geofence zone (ID: {$zone->id})."
+                            "Bus {$busInfo->bus_number} has entered {$zone->location_name}."
                         );
 
                         $sendgrid = new \SendGrid(env('SENDGRID_API'));

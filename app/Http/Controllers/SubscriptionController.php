@@ -48,15 +48,15 @@ class SubscriptionController extends Controller
 
         // Source alert
         if ($request->has('alert_source')) {
-            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_exit', $request->message, $route->source_latitude, $route->source_longitude);
+            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_exit', $request->message, $route->source_latitude, $route->source_longitude, $route->source);
         }
         // Destination alert
         if ($request->has('alert_destination')) {
-            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_entry', $request->message, $route->destination_latitude, $route->destination_longitude);
+            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_entry', $request->message, $route->destination_latitude, $route->destination_longitude, $route->destination);
         }
         // Alert zone
         if ($request->has('alert_zone') && $request->zone_latitude && $request->zone_longitude) {
-            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_entry', $request->message, $request->zone_latitude, $request->zone_longitude);
+            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_entry', $request->message, $request->zone_latitude, $request->zone_longitude, $request->alert_zone_address);
         }
 
         // Create a subscription for each alert
@@ -72,7 +72,7 @@ class SubscriptionController extends Controller
         return redirect()->route('subscriptions.index')->with('success', 'Subscription(s) created successfully.');
     }
 
-    private function findOrCreateAlert($bus_id, $route_id, $type, $message, $latitude, $longitude)
+    private function findOrCreateAlert($bus_id, $route_id, $type, $message, $latitude, $longitude, $location_name = null)
     {
         $alert = Alert::where('bus_id', $bus_id)
             ->where('type', $type)
@@ -86,6 +86,7 @@ class SubscriptionController extends Controller
             'latitude' => $latitude,
             'longitude' => $longitude,
             'message' => $message,
+            'location_name' => $location_name,
             'severity' => 'info',
             'is_read' => false,
         ]);
@@ -118,13 +119,13 @@ class SubscriptionController extends Controller
         $alerts = [];
 
         if ($request->has('alert_source')) {
-            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_exit', $route->source_latitude, $route->source_longitude);
+            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_exit', $request->message, $route->source_latitude, $route->source_longitude, $route->source);
         }
         if ($request->has('alert_destination')) {
-            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_entry', $route->destination_latitude, $route->destination_longitude);
+            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_entry', $request->message, $route->destination_latitude, $route->destination_longitude, $route->destination);
         }
         if ($request->has('alert_zone') && $request->zone_latitude && $request->zone_longitude) {
-            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_entry', $request->zone_latitude, $request->zone_longitude);
+            $alerts[] = $this->findOrCreateAlert($route->bus_id, $route->id, 'geofence_entry', $request->message, $request->zone_latitude, $request->zone_longitude, $request->alert_zone_address);
         }
 
         foreach ($alerts as $alert) {

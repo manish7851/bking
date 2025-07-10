@@ -242,7 +242,7 @@ ws.onmessage = function (event) {
 	}
 
 };
-function showNotification(message, duration = 4000) {
+function showNotification(message, duration = 30000) {
   const notification = document.getElementById('notification');
   notification.innerHTML = message;
   notification.style.display = 'block';

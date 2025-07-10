@@ -1,5 +1,4 @@
 @extends('layouts.app')
-
 @section('content')
 <div class="container">
     <h1>Subscription Details</h1>
@@ -18,8 +17,13 @@
     <div class="mb-3">
         <strong>Bus:</strong> {{ $subscription->alert->bus->bus_name ?? '-' }}
     </div>
-    <div>
-        <strong>Route:</strong> {{ $subscription->alert->message ?? 'N/A' }}    </div>
+    <div class="mb-3">
+        <strong>Route:</strong> {{ $subscription->alert->message ?? 'N/A' }}    
+    </div>
+    <div class="mb-3">
+        <strong>Location Name:</strong>
+        {{ $subscription->alert ? $subscription->alert->location_name : '-' }}
+    </div>
     <div class="mb-3">
         <strong>Latitude:</strong> {{ $subscription->alert->latitude ?? '-' }}
     </div>
