@@ -21,7 +21,7 @@
         <tr><th>Bus Name</th><td>{{ $booking->bus_name }} ({{ $booking->bus_number }})</td></tr>
         <tr>
             <th>Route</th>
-            <td>{{ $booking->route->source ?? $booking->source ?? 'N/A' }} → {{ $booking->route->destination ?? $booking->destination ?? 'N/A' }}</td>
+            <td>{{ $booking->route->source ?? $booking->source ?? 'N/A' }} to {{ $booking->route->destination ?? $booking->destination ?? 'N/A' }}</td>
         </tr>
         <tr><th>Seat</th><td>{{ $booking->seat }}</td></tr>
         <tr><th>Price</th><td>Rs. {{ number_format($booking->price, 2) }}</td></tr>
