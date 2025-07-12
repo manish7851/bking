@@ -7,7 +7,7 @@
 <body>
     <h2>Thank you for your booking!</h2>
     <strong>Ambikaswori Yatayat</strong>
-    <p>Dear {{ $booking->user->name }},</p>
+    <p>Dear {{ $booking->customer->name }},</p>
     <p>Here are your ticket details:</p>
     <ul>
         <li><strong>Bus Name:</strong> {{ $booking->bus_name }}</li>

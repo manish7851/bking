@@ -519,20 +519,34 @@
 
         // --- Enable seat selection only after customer, bus, and route are selected ---
         function updateSeatButtonsState() {
-            const customerSelected = $('#customer_id').val();
-            const busSelected = $('#bus_id').val();
-            const routeSelected = $('#route_id').val();
-            if (customerSelected && busSelected && routeSelected) {
-                $('.seat').prop('disabled', false).each(function() {
-                    if ($(this).hasClass('btn-danger')) {
-                        $(this).prop('disabled', true); // Booked seats stay disabled
+            const routeId = $('#route_id').val();
+
+            if (routeId) {
+                // Fetch booked seats for the selected route
+                $.ajax({
+                    url: `/bookings/booked_seats/${routeId}`,
+                    type: 'GET',
+                    success: function(bookedSeats) {
+                        // Reset all seats to default state
+                        $('.seat').removeClass('btn-danger').addClass('btn-secondary').prop('disabled', false);
+
+                        // Mark booked seats as disabled and red
+                        bookedSeats.forEach(function(seat) {
+                            $(`.seat[data-seat="${seat}"]`).removeClass('btn-secondary').addClass('btn-danger').prop('disabled', true);
+                        });
+                    },
+                    error: function() {
+                        console.error('Could not fetch booked seats.');
+                        // Disable all seats if there's an error
+                        $('.seat').prop('disabled', true);
                     }
                 });
             } else {
+                // If no route is selected, disable all seats
                 $('.seat').prop('disabled', true);
             }
         }
-        $('#customer_id, #bus_id, #route_id').on('change', updateSeatButtonsState);
+        $('#customer_id, #bus_id, #route_id, #travel_date').on('change', updateSeatButtonsState);
         updateSeatButtonsState(); // Initial call
 
         // When a seat is clicked, set the value in the input and update price

@@ -69,6 +69,7 @@ Route::middleware(['customer.auth'])->group(function () {
 Route::post('/booking/prepare', [App\Http\Controllers\BookingController::class, 'prepareBooking'])->name('booking.prepare');
 Route::post('/bookings/store', [App\Http\Controllers\BookingController::class, 'store'])->name('bookings.store');
 Route::get('/check-seat-availability', [BookingController::class, 'checkSeatAvailability'])->name('check.seat.availability');
+Route::get('/bookings/booked_seats/{route_id}', [BookingController::class, 'getBookedSeats'])->name('bookings.booked_seats');
 Route::post('/check-seat-availability', [BookingController::class, 'checkSeatAvailability'])->name('check.seat.availability.post');
 Route::get('/booking/download/{id}', [App\Http\Controllers\TicketController::class, 'download'])->name('booking.download');
 Route::get('/track/{bus_id}/route/{active_route_id}', [App\Http\Controllers\TicketController::class, 'trackBusRoute'])->name('booking.trackBusActiveRoute');

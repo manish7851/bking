@@ -12,6 +12,7 @@ use App\Services\ESewaPaymentService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TicketDetailsMail;
+use Illuminate\Support\Facades\Http;
 
 class BookingController extends Controller
 {
@@ -124,7 +125,7 @@ class BookingController extends Controller
                 'route_id' => 'required|exists:routes,id',
                 'customer_id' => 'required|exists:customers,id',
                 'price' => 'required|numeric',
-                'payment_method' => 'required|in:esewa' 
+                'payment_method' => 'required|in:esewa'
             ]);
 
             // Add the seat value to validated data
@@ -238,6 +239,21 @@ class BookingController extends Controller
                 'available' => false,
                 'message' => 'Error checking seat availability'
             ], 500);
+        }
+    }
+
+    public function getBookedSeats($route_id)
+    {
+        try {
+            $bookedSeats = Booking::where('route_id', $route_id)
+                ->whereIn('status', ['Booked', 'confirmed'])
+                ->pluck('seat')
+                ->toArray();
+
+            return response()->json($bookedSeats);
+        } catch (\Exception $e) {
+            Log::error('Failed to get booked seats: ' . $e->getMessage());
+            return response()->json(['error' => 'Could not retrieve booked seats.'], 500);
         }
     }
 
@@ -581,19 +597,77 @@ class BookingController extends Controller
             $booking->save();
 
             // Send ticket details email to the customer only if requested
-            if ($request->has('send_ticket_notification') && !empty($customer->email)) {
+            // if ($request->has('send_ticket_notification') && !empty($customer->email)) {
                 try {
-                    Mail::to($customer->email)->send(new TicketDetailsMail($booking));
-                } catch (\Exception $mailError) {
-                    Log::error('Failed to send ticket email: ' . $mailError->getMessage());
+                    $apiKey = env('SENDGRID_API');
+                    if (!$apiKey) {
+                        throw new \Exception('SendGrid API key is not configured.');
+                    }
+
+                    // Render the mailable to get the HTML content.
+                    $htmlContent = (new TicketDetailsMail($booking))->render();
+
+                    $response = Http::withToken($apiKey)->post('https://api.sendgrid.com/v3/mail/send', [
+                        'personalizations' => [
+                            [
+                                'to' => [['email' => $customer->email]],
+                                'subject' => 'Your Ticket Details'
+                            ]
+                        ],
+                        'from' => ['email' => 'gmanish092@gmail.com', 'name' => config('mail.from.name', 'Bus Booking')],
+                        'content' => [
+                            [
+                                'type' => 'text/html',
+                                'value' => $htmlContent
+                            ]
+                        ]
+                    ]);
+
+                    if ($response->failed()) {
+                        Log::error('Failed to send ticket email via SendGrid', [
+                            'status' => $response->status(),
+                            'body' => $response->body()
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Error preparing or sending email via SendGrid: ' . $e->getMessage());
                 }
-            }
+            //}
             // Always notify admin
-            try {
-                Mail::to('admin@example.com')->send(new TicketDetailsMail($booking));
-            } catch (\Exception $mailError) {
-                Log::error('Failed to send ticket email to admin: ' . $mailError->getMessage());
-            }
+            // try {
+            //     $apiKey = env('SENDGRID_API');
+            //     if (!$apiKey) {
+            //         throw new \Exception('SendGrid API key is not configured.');
+            //     }
+
+            //     // Render the mailable to get the HTML content.
+            //     $htmlContent = (new TicketDetailsMail($booking))->render();
+
+                // $response = Http::withToken($apiKey)->post('https://api.sendgrid.com/v3/mail/send', [
+                //     'personalizations' => [
+                //         [
+                //             'to' => [['email' => 'admin@example.com']],
+                //             'subject' => 'New Booking Notification'
+                //         ]
+                //     ],
+                //     'from' => ['email' => config('mail.from.address', 'noreply@example.com'), 'name' => config('mail.from.name', 'Bus Booking System')],
+                //     'content' => [
+                //         [
+                //             'type' => 'text/html',
+                //             'value' => $htmlContent
+                //         ]
+                //     ]
+                // ]);
+
+                // if ($response->failed()) {
+                //     Log::error('Failed to send ticket email to admin via SendGrid', [
+                //         'status' => $response->status(),
+                //         'body' => $response->body()
+                //     ]);
+                // }
+            // } catch (\Exception $e) {
+            //     Log::error('Error preparing or sending admin email via SendGrid: ' . $e->getMessage());
+            // }
 
             session(['current_booking' => $booking]);
 
