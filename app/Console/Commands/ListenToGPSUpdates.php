@@ -125,7 +125,7 @@ class ListenToGPSUpdates extends Command
         foreach ($zones as $zone) {
             $lat = $zone->latitude ?? 0;
             $lon = $zone->longitude ?? 0;
-            $radius = 300;/*$busInfo->source_radius ?? 1000;*/ // Default to 1000 meters
+            $radius = 100;/*$busInfo->source_radius ?? 1000;*/ // Default to 1000 meters
             $transition = self::checkZoneTransitions(
                 $zone->id, 
                 $busInfo->id, $busData['lat'], $busData['lon'],

@@ -179,6 +179,8 @@ Route::view('/contact', 'contact')->name('contact');
 // User registration routes
 Route::get('/userregister', [App\Http\Controllers\AuthController::class, 'showUserRegisterForm'])->name('userregister');
 Route::post('/userregister', [App\Http\Controllers\AuthController::class, 'userRegister'])->name('userregister.attempt');
+Route::get('/register', [App\Http\Controllers\AuthController::class, 'showUserRegisterForm'])->name('register');
+Route::post('/register', [App\Http\Controllers\AuthController::class, 'userRegister'])->name('register.attempt');
 Route::get('/bookings/{id}/edit', [App\Http\Controllers\BookingController::class, 'edit'])->name('bookings.edit');
 // RESTful booking creation route for AJAX
 Route::post('/bookings', [App\Http\Controllers\BookingController::class, 'store']);

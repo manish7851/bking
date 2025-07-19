@@ -494,7 +494,7 @@
 
 
 <script>
-const map = L.map('map').setView([27.9634, 84.6548], 7); // Midpoint between Kathmandu and Pokhara
+const map = L.map('map').setView([28.132973, 82.298170], 7); // Midpoint between Kathmandu and Pokhara
 let busMarker;
 function updateBusMarker(busData) {
             // Update bus info panel
@@ -506,15 +506,15 @@ function updateBusMarker(busData) {
             // If bus has location data, update or create marker
             if (busData.latitude && busData.longitude) {
                 const position = [busData.latitude, busData.longitude];
-                
-                // Update icon rotation based on heading
-                if (busData.heading) {
-                    const icon = L.divIcon({
+                const icon = L.divIcon({
                         className: 'bus-icon-container',
                         html: `<img src="/bus.svg" alt="Bus" style="transform: rotate(${busData.heading}deg);" />`,
-                        iconSize: [32, 32],
+                        // iconSize: [64, 64],
                         iconAnchor: [16, 16]
                     });
+                    
+                // Update icon rotation based on heading
+                if (busData.heading) {
                     
                     if (busMarker) {
                         busMarker.setIcon(icon);
@@ -526,7 +526,7 @@ function updateBusMarker(busData) {
                     if (busMarker) {
                         busMarker.setLatLng(position);
                     } else {
-                        busMarker = L.marker(position, {icon: busIcon}).addTo(map);
+                        busMarker = L.marker(position, {icon: icon}).addTo(map);
                     }
                 }
                 

@@ -65,10 +65,11 @@
         <div class="mb-3" id="zone-coords" style="display:none;">
             <label>Alert Zone Address Search:</label><br>
             <input type="text" id="address" placeholder="Search or pick on map..." autocomplete="off"><br><br>
-            OR <button type="button" onclick="openMap()">Pick on Map</button><br/>
-            <label for="zone_latitude" class="form-label">Zone Latitude</label>
+            OR 
             <input type="text" name="zone_latitude" id="zone_latitude" class="form-control">
             <label for="zone_longitude" class="form-label">Zone Longitude</label>
+            <button type="button" onclick="openMap()">Pick on Map</button><br/>
+            <label for="zone_latitude" class="form-label">Zone Latitude</label>
             <input type="text" name="zone_longitude" id="zone_longitude" class="form-control">
             <input type="hidden" name="alert_zone_address" id="alert_zone_address">
         </div>
