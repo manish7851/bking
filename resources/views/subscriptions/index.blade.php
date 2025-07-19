@@ -16,6 +16,7 @@
                 <th>Email</th>
                 <th>Trip</th>
                 <th>Type</th>
+                <th>Aert Location</th>
                 <th>Coordinates</th>
                 <th>Delivered</th>
                 <th>Actions</th>
@@ -28,6 +29,7 @@
                     <td>{{ $subscription->email }}</td>
                     <td>{{ $subscription->alert ? $subscription->alert->message : '-' }}</td>
                     <td>{{ $subscription->alert ? $subscription->alert->type : '-' }}</td>
+                    <td>{{ $subscription->alert ? $subscription->alert->location_name : '-' }}</td>
                     <td>{{ $subscription->alert ? $subscription->alert->latitude . ', ' . $subscription->alert->longitude : '-' }}</td>
                     <td>{{ $subscription->delivered ? 'Yes' : 'No' }}</td>
                     <td>

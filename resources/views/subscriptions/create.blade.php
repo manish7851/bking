@@ -143,11 +143,11 @@
 
     // If no coordinates provided, use default location
     if (isNaN(lat) || isNaN(lng)) {
-        lat = 27.7; lng = 85.3;
+        lat = 28.127867967261864; lng = 82.29569223574006;
     }
 
     if (!map) {
-        map = L.map('map').setView([lat, lng], 13);
+        map = L.map('map').setView([lat, lng], 17);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         marker = L.marker([lat, lng], { draggable: true }).addTo(map);
 
