@@ -23,6 +23,7 @@
         </div>
         <div class="text-end mt-3">
             <button type="submit" class="btn btn-primary">Search</button>
+            <a href="/userbookings/search">Clear</a>
         </div>
     </form>
 
@@ -39,6 +40,7 @@
                     <th>Bus Number</th>
                     <th>Source</th>
                     <th>Destination</th>
+                    <th>Trip Date</th>
                     <th>Services</th>
                     <th>Price</th>
                     <th></th>
@@ -51,6 +53,7 @@
                         <td>{{ $route->bus->bus_number ?? 'N/A' }}</td>
                         <td>{{ $route->source }}</td>
                         <td>{{ $route->destination }}</td>
+                        <td>{{ \Carbon\Carbon::parse($route->trip_date)->format('d M Y H:i') }}</td>
                         <td>
                             @php
                                 $services = [];

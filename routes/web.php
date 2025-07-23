@@ -83,6 +83,7 @@ Route::patch('/buses/{id}/tracking', [App\Http\Controllers\BusController::class,
 Route::delete('/buses/{id}', [App\Http\Controllers\BusController::class, 'destroy'])->name('buses.destroy');
 Route::get('/map/buses', [BusController::class, 'map'])->name('buses.map');
 Route::get('/routes', [App\Http\Controllers\RouteController::class, 'index'])->name('routes.index');
+Route::get('/routes/search', [App\Http\Controllers\RouteController::class, 'search'])->name('routes.search');
 Route::get('/routes/{id}/edit', [App\Http\Controllers\RouteController::class, 'edit'])->name('routes.edit');
 Route::post('/routes/store', [App\Http\Controllers\RouteController::class, 'store'])->name('routes.store');
 Route::delete('/routes/{id}', [App\Http\Controllers\RouteController::class, 'destroy'])->name('routes.destroy');

@@ -28,6 +28,14 @@ class UserBookingController extends Controller
                 $query->where('destination', 'LIKE', '%' . $request->input('destination') . '%');
             }
 
+            if ($request->filled('date')) {
+                // Compare only the date part of trip_date with the provided date
+                $query->whereDate('trip_date', '=', trim($request->date));
+            } else {
+                // Compare only the date part of trip_date with the provided date
+                $query->whereDate('trip_date', '>=', now()->toDateString());
+            }
+                        
             // Do NOT filter by date, as routes are not date-specific
             $routes = $query->get();
 

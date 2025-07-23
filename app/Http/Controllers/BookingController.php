@@ -269,6 +269,11 @@ class BookingController extends Controller
                 $query->where('destination', 'like', '%' . $request->destination . '%');
             }
 
+            if ($request->filled('date')) {
+                // Compare only the date part of trip_date with the provided date
+                $query->whereDate('trip_date', '=', trim($request->date));
+            }
+            
             $routes = $query->get();
 
             if ($routes->count() === 1) {

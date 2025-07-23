@@ -44,6 +44,26 @@
         <h2>All Routes</h2>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRouteModal">➕ Add Route</button>
     </div>
+    <form method="GET" action="{{ route('routes.search') }}" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <label for="source" class="form-label">Source</label>
+                <input type="text" name="source" id="source" class="form-control" placeholder="Enter source" value="{{ request('source') }}">
+            </div>
+            <div class="col-md-4">
+                <label for="destination" class="form-label">Destination</label>
+                <input type="text" name="destination" id="destination" class="form-control" placeholder="Enter destination" value="{{ request('destination') }}">
+            </div>
+            <div class="col-md-4">
+                <label for="date" class="form-label">Date</label>
+                <input type="date" name="date" id="date" class="form-control" value="{{ request('date') }}">
+            </div>
+        </div>
+        <div class="text-end mt-3">
+            <button type="submit" class="btn btn-primary">Search</button>
+            <a href="/routes/search">Clear</a>
+        </div>
+    </form>
 
     <!-- Route Table -->
     <!-- Route Table -->
@@ -67,7 +87,7 @@
                     <td>{{ $route->source }}</td>
                     <td>{{ $route->destination }}</td>
                     <td>{{ $route->source_latitude }}, {{ $route->source_longitude }} - {{ $route->destination_latitude }}, {{ $route->destination_longitude }}</td>
-                    <td>{{ $route->trip_date ? \Carbon\Carbon::parse($route->trip_date)->format('Y-m-d') : 'N/A' }}</td>
+                    <td>{{ $route->trip_date ? \Carbon\Carbon::parse($route->trip_date)->format('d M Y H:i') : 'N/A' }}</td>
                     <td>Rs{{ $route->price }}</td>
                     <td>
                         <!-- Edit Button -->
@@ -117,10 +137,10 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="trip_date" class="form-label">Trip Date</label>
-                            <input type="date" class="form-control" name="trip_date" 
-                                min="{{ date('Y-m-d') }}" 
-                                value="{{ date('Y-m-d') }}" 
+                            <label for="trip_date" class="form-label">Trip Date & Time</label>
+                            <input type="datetime-local" class="form-control" name="trip_date" 
+                                min="{{ date('Y-m-d\TH:i') }}" 
+                                value="{{ date('Y-m-d\TH:i') }}" 
                                 required>
                         </div>
                         <div class="mb-3">

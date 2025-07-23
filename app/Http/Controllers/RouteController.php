@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 use App\Models\Bus;
 
 use App\Models\Route;
+use Illuminate\Container\Attributes\Log;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log as FacadesLog;
+
+use function Illuminate\Log\log;
 
 class RouteController extends Controller
 {
@@ -32,7 +36,11 @@ class RouteController extends Controller
             'source' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
             'price' => 'required|numeric',
-            'trip_date' => 'required|date|after_or_equal:today',
+            'trip_date' => [
+            'required',
+            'date_format:Y-m-d\TH:i',
+            'after_or_equal:today',
+            ],
         ]);
     
         // Verify bus exists and is available
@@ -93,6 +101,37 @@ class RouteController extends Controller
     {
         return view('routes.route-picker');
     }
+    public function search(Request $request)
+    {        
+        try {
+            $buses = Bus::all();
+            // Build the route search query
+            $query = Route::with('bus');
 
+            if ($request->filled('source')) {
+                $query->where('source', 'LIKE', '%' . $request->input('source') . '%');
+            }
+
+            if ($request->filled('destination')) {
+                $query->where('destination', 'LIKE', '%' . $request->input('destination') . '%');
+            }
+
+            if ($request->filled('date')) {
+                // Compare only the date part of trip_date with the provided date
+                $query->whereDate('trip_date', '=', trim($request->date));
+            } /*else {
+                // Compare only the date part of trip_date with the provided date
+                $query->whereDate('trip_date', '>=', now()->toDateString());
+            }*/
+                        
+            // Do NOT filter by date, as routes are not date-specific
+            $routes = $query->get();
+            return view('routes.routes', compact('routes', 'buses'));
+
+        } catch (\Exception $e) {
+            FacadesLog::error('User booking search error: ' . $e->getMessage());
+            return back()->with('error', 'Unable to search routes. Please try again.');
+        }
+    }
    
 }
