@@ -306,29 +306,44 @@ window.serverData = {
 };
 
 
+    
     var pickupDropoffModal = document.getElementById('pickupDropoffModal');
       pickupDropoffModal.addEventListener('show.bs.modal', function (event) {
         var button = event.relatedTarget;
         var bookingId = button.getAttribute('data-booking-id');
         document.getElementById('modal_booking_id').value = bookingId;
         const currentBooking = window.serverData.bookings.find(b => b.id == bookingId);
-        console.log(bookingId, currentBooking);
+        // console.log(bookingId, currentBooking);
+        if(currentBooking?.pickup_location != null && currentBooking?.pickup_location != '') {
             const [pickupLat, pickupLng] = currentBooking.pickup_location.split(',').map(Number);
+            window.pickupLat = pickupLat || 27.7;
+            window.pickupLng = pickupLng || 85.3;
+            updateAddress({ lat: window.pickupLat, lng: window.pickupLng }, 1);
+
+        } else {
+            document.getElementById(`selectedCoords1`).textContent = ``;
+            document.getElementById(`selectedAddress1`).textContent = '';
+            document.getElementById("pickup_location").value = '';
+        }
+    
+        if(currentBooking?.dropoff_location != null && currentBooking?.dropoff_location != '') {
+
             // document.getElementById('pickup_location_latitude').value = pickupLat || '';
             // document.getElementById('pickup_location_longitude').value = pickupLng || '';
             const [dropoffLat, dropoffLng] = currentBooking.dropoff_location.split(',').map(Number);
             // document.getElementById('dropoff_location_latitude').value = dropoffLat || '';
             // document.getElementById('dropoff_location_longitude').value = dropoffLng || '';
-            window.pickupLat = pickupLat || 27.7;
-            window.pickupLng = pickupLng || 85.3;
             window.dropoffLat = dropoffLat || 27.7;
             window.dropoffLng = dropoffLng || 85.3;
-            console.log(`Pickup: ${pickupLat}, ${pickupLng}`);
-            console.log(`Dropoff: ${dropoffLat}, ${dropoffLng}`);
-            updateAddress({ lat: window.pickupLat, lng: window.pickupLng }, 1);
+            // console.log(`Dropoff: ${dropoffLat}, ${dropoffLng}`);
             updateAddress({ lat: window.dropoffLat, lng: window.dropoffLng }, 2);
-            document.getElementById('pickup_remark').value = currentBooking.pickup_remark ||'';
-            document.getElementById('dropoff_remark').value = currentBooking.dropoff_remark ||'';
+        } else {
+            document.getElementById(`selectedCoords2`).textContent = ``;
+            document.getElementById(`selectedAddress2`).textContent = '';
+            document.getElementById("drop_off_location").value = '';
+        }
+        document.getElementById('pickup_remark').value = currentBooking.pickup_remark ||'';
+        document.getElementById('dropoff_remark').value = currentBooking.dropoff_remark ||'';
 
       });
       
