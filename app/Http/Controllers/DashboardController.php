@@ -133,6 +133,10 @@ class DashboardController extends Controller
                 'status_icon' => $statusInfo['icon'],
                 'payment_details' => $booking->payment_details ?? null,
                 'created_at' => $booking->created_at ?? now(),
+                'pickup_location' => $booking->pickup_location ?? '',
+                'pickup_remark' => $booking->pickup_remark ?? '',   
+                'dropoff_location' => $booking->dropoff_location ?? '',
+                'dropoff_remark' => $booking->dropoff_remark ?? ''
             ];
         });
         

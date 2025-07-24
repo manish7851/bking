@@ -78,7 +78,7 @@
                 </li>
                 <li class="nav-item mb-2">
                     <a href="{{ route('userbookings') }}" class="nav-link text-white px-3 py-2 rounded {{ request()->routeIs('userbookings') ? 'bg-primary' : '' }}">
-                        <i class="fas fa-ticket-alt me-2"></i> My Bookings
+                        <i class="fas fa-ticket-alt me-2"></i> Ticket Booking
                     </a>
                 </li>
                                 <li class="nav-item mb-2">

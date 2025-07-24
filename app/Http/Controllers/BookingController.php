@@ -706,4 +706,32 @@ class BookingController extends Controller
             ], 500);
         }
     }
+
+        /**
+     * Save pickup and dropoff details for a booking (AJAX).
+     */
+    public function savePickupDropoff(Request $request)
+    {
+        $validated = $request->validate([
+            'booking_id' => 'required|exists:bookings,id',
+            'pickup_location' => 'nullable|string|max:255',
+            'pickup_location_latitude' => 'nullable|numeric|max:255',
+            'pickup_location_longitude' => 'nullable|numeric|max:255',
+            'pickup_remark' => 'nullable|string|max:255',
+            'dropoff_location' => 'nullable|string|max:255',
+            'dropoff_location_latitude' => 'nullable|numeric|max:255',
+            'dropoff_location_longitude' => 'nullable|numeric|max:255',
+            'dropoff_remark' => 'nullable|string|max:255',
+        ]);
+
+        $booking = Booking::findOrFail($validated['booking_id']);
+        $booking->pickup_location = $validated['pickup_location_latitude'] . ',' . $validated['pickup_location_longitude'];
+        $booking->pickup_remark = $validated['pickup_remark'] ?? null;
+        $booking->dropoff_location = $validated['dropoff_location_latitude'] . ',' . $validated['dropoff_location_longitude'];
+        $booking->dropoff_remark = $validated['dropoff_remark'] ?? null;
+        $booking->save();
+        return redirect()->back()->with('success', 'Pickup/Dropoff details saved successfully.');
+
+    }
+
 }

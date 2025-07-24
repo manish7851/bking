@@ -91,6 +91,7 @@ Route::delete('/routes/{id}', [App\Http\Controllers\RouteController::class, 'des
 // User booking routes
 Route::middleware(['customer.auth'])->group(function () {
     Route::get('/userbookings/search', [App\Http\Controllers\BookingController::class, 'fetchRoutes'])->name('userbookings.search');
+    Route::post('/userbookings/pickupdropff', [App\Http\Controllers\BookingController::class, 'savePickupDropoff'])->name('userbookings.picupdropoff');
     Route::get('/userbookings/create', [App\Http\Controllers\BookingController::class, 'userCreate'])->name('userbookings.create');
     Route::post('/userbookings/create', [App\Http\Controllers\BookingController::class, 'userStore'])->name('userbookings.store');
 });
