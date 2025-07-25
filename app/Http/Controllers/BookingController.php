@@ -125,7 +125,7 @@ class BookingController extends Controller
                 'route_id' => 'required|exists:routes,id',
                 'customer_id' => 'required|exists:customers,id',
                 'price' => 'required|numeric',
-                'payment_method' => 'required|in:esewa'
+                'payment_method' => 'required'
             ]);
 
             // Add the seat value to validated data
@@ -170,30 +170,82 @@ class BookingController extends Controller
 
             session(['current_booking' => $booking]);
 
-            if ($payment_method === 'esewa') {
-                $esewaService = new ESewaPaymentService();
+            if ($payment_method === 'khalti') {
+                // $esewaService = new ESewaPaymentService();
                 // Set isUserBooking to true for user bookings, false for admin bookings
                 $isUserBooking = request()->is('userbookings/*');
-                $response = $esewaService->initiatePayment($validated['price'], $booking->id, $isUserBooking);
+                // $response = $esewaService->initiatePayment($validated['price'], $booking->id, $isUserBooking);
 
-                if ($response['success']) {
-                    return response()->json([
-                        'success' => true,
-                        'redirect_url' => $response['redirect_url']
-                    ]);
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Payment initiation failed. Please try again.'
-                    ], 400);
-                }
-            }
+                // if ($response['success']) {
+                    // return response()->json([
+                    //     'success' => true,
+                    //     'current_booking' => $booking,
+                    //     'customer' => $customer,
+                    //     // 'redirect_url' => $response['redirect_url']
+                    // ]);
+                // } else {
+                //     return response()->json([
+                //         'success' => false,
+                //         'message' => 'Payment initiation failed. Please try again.'
+                //     ], 400);
+                // }
+            // }
 
-            return response()->json([
-                'success' => true,
-                'redirect_url' => route('booking.confirmation', ['id' => $booking->id])
+            // return response()->json([
+            //     'success' => true,
+            //     'redirect_url' => route('booking.confirmation', ['id' => $booking->id])
+            // ]);
+               if ($booking && $customer && $route) {
+            $data = [
+                'return_url' => 'http://localhost:8000/booking/confirmation/' . $booking['id'],
+                'website_url' => 'https://example.com/',
+                'amount' => $booking['price'] * 100,  // Convert to paisa
+                'purchase_order_id' => $booking['id'],
+                'purchase_order_name' => 'Booking for ' . $booking['bus_name'] . ' on ' . $route['trip_date'],
+                'customer_info' => [
+                    'name' => $customer['customer_name'],
+                    'email' => $customer['email'],
+                    'phone' => $customer['customer_contact']
+                ]
+            ];
+
+            // Make the POST request to Khalti API
+            $response = Http::withHeaders([
+                'Authorization' => 'key fe52945464b045df9ab15b77fb763f28',  // ⚠️ Replace with your actual test key
+                'Content-Type' => 'application/json',
+            ])->post('https://dev.khalti.com/api/v2/epayment/initiate/', $data);
+
+            // Handle the response
+            $responseData = $response->json();  // Decode JSON response
+            Log::info('Khalti payment initiation response', [
+                'response' => $responseData,
+                'booking_id' => $booking->id,
+                'amount' => $booking->price
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+            if (isset($responseData['payment_url'])) {
+                $booking->update(['payment_status' => 'completed']);
+                // Redirect to Khalti payment page
+                return redirect($responseData['payment_url']);
+            } else {
+                $booking->update(['status' => 'pending']);
+
+                // Redirect to user dashboard if no redirect URL is provided
+                return redirect('/userdashboard');
+            }
+                
+            } else {
+                $booking->update(['status' => 'error']);
+                // Handle invalid booking or customer data
+                return redirect('/error')->with('error', 'Invalid booking or customer data.');
+            }
+        } else {
+                $booking->update(['payment_status' => 'completed']);
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => route('booking.confirmation', ['id' => $booking->id])
+                ]); 
+            }
+    } catch (\Illuminate\Validation\ValidationException $e) {
             // Return validation errors as JSON
             return response()->json([
                 'success' => false,
@@ -296,7 +348,40 @@ class BookingController extends Controller
     {
         try {
             $booking = Booking::with(['route.bus', 'customer'])->findOrFail($id);
+try {
+                    $apiKey = env('SENDGRID_API');
+                    if (!$apiKey) {
+                        throw new \Exception('SendGrid API key is not configured.');
+                    }
 
+                    // Render the mailable to get the HTML content.
+                    $htmlContent = (new TicketDetailsMail($booking))->render();
+
+                    $response = Http::withToken($apiKey)->post('https://api.sendgrid.com/v3/mail/send', [
+                        'personalizations' => [
+                            [
+                                'to' => [['email' => $booking->customer->email]],
+                                'subject' => 'Your Ticket Details'
+                            ]
+                        ],
+                        'from' => ['email' => 'gmanish092@gmail.com', 'name' => config('mail.from.name', 'Bus Booking')],
+                        'content' => [
+                            [
+                                'type' => 'text/html',
+                                'value' => $htmlContent
+                            ]
+                        ]
+                    ]);
+
+                    if ($response->failed()) {
+                        Log::error('Failed to send ticket email via SendGrid', [
+                            'status' => $response->status(),
+                            'body' => $response->body()
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Error preparing or sending email via SendGrid: ' . $e->getMessage());
+                }
             if (!session('customer_id') || $booking->customer_id != session('customer_id')) {
                 return redirect()->route('userlogin')->with('error', 'Access denied.');
             }
@@ -560,7 +645,7 @@ class BookingController extends Controller
             $validated = $request->validate([
                 'route_id' => 'required|exists:routes,id',
                 'price' => 'required|numeric',
-                'payment_method' => 'required|in:esewa'
+                'payment_method' => 'required'
             ]);
 
             // Add the seat value and customer_id to validated data
@@ -601,42 +686,45 @@ class BookingController extends Controller
             $booking->user_id = null;
             $booking->save();
 
+        // Check if the booking and customer information is valid
+        if ($booking && $customer && $route) {
+            $data = [
+                'return_url' => 'http://localhost:8000/booking/confirmation/' . $booking['id'],
+                'website_url' => 'https://example.com/',
+                'amount' => $booking['price'] * 100,  // Convert to paisa
+                'purchase_order_id' => $booking['id'],
+                'purchase_order_name' => 'Booking for ' . $booking['bus_name'] . ' on ' . $route['trip_date'],
+                'customer_info' => [
+                    'name' => $customer['name'],
+                    'email' => $customer['email'],
+                    'phone' => $customer['phone']
+                ]
+            ];
+
+            // Make the POST request to Khalti API
+            $response = Http::withHeaders([
+                'Authorization' => 'key fe52945464b045df9ab15b77fb763f28',  // ⚠️ Replace with your actual test key
+                'Content-Type' => 'application/json',
+            ])->post('https://dev.khalti.com/api/v2/epayment/initiate/', $data);
+
+            // Handle the response
+            $responseData = $response->json();  // Decode JSON response
+
+            if (isset($responseData['redirect_url'])) {
+                // Redirect to Khalti payment page
+                return redirect($responseData['redirect_url']);
+            } else {
+                // Redirect to user dashboard if no redirect URL is provided
+                return redirect('/userdashboard');
+            }
+        } else {
+            // Handle invalid booking or customer data
+            return redirect('/error')->with('error', 'Invalid booking or customer data.');
+        }
+
             // Send ticket details email to the customer only if requested
             // if ($request->has('send_ticket_notification') && !empty($customer->email)) {
-                try {
-                    $apiKey = env('SENDGRID_API');
-                    if (!$apiKey) {
-                        throw new \Exception('SendGrid API key is not configured.');
-                    }
-
-                    // Render the mailable to get the HTML content.
-                    $htmlContent = (new TicketDetailsMail($booking))->render();
-
-                    $response = Http::withToken($apiKey)->post('https://api.sendgrid.com/v3/mail/send', [
-                        'personalizations' => [
-                            [
-                                'to' => [['email' => $customer->email]],
-                                'subject' => 'Your Ticket Details'
-                            ]
-                        ],
-                        'from' => ['email' => 'gmanish092@gmail.com', 'name' => config('mail.from.name', 'Bus Booking')],
-                        'content' => [
-                            [
-                                'type' => 'text/html',
-                                'value' => $htmlContent
-                            ]
-                        ]
-                    ]);
-
-                    if ($response->failed()) {
-                        Log::error('Failed to send ticket email via SendGrid', [
-                            'status' => $response->status(),
-                            'body' => $response->body()
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    Log::error('Error preparing or sending email via SendGrid: ' . $e->getMessage());
-                }
+                
             //}
             // Always notify admin
             // try {
@@ -674,22 +762,24 @@ class BookingController extends Controller
             //     Log::error('Error preparing or sending admin email via SendGrid: ' . $e->getMessage());
             // }
 
-            session(['current_booking' => $booking]);
+            // session(['current_booking' => $booking]);
 
-            $esewaService = new ESewaPaymentService();
-            $response = $esewaService->initiatePayment($validated['price'], $booking->id);
+            // $esewaService = new ESewaPaymentService();
+            // $response = $esewaService->initiatePayment($validated['price'], $booking->id);
 
-            if ($response['success']) {
-                return response()->json([
-                    'success' => true,
-                    'redirect_url' => $response['redirect_url']
-                ]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment initiation failed. Please try again.'
-                ], 400);
-            }
+            // if ($response['success']) {
+                // return response()->json([
+                //     'success' => true,
+                //      'current_booking' => $booking,
+                //     'customer' => $customer,
+                //     'route' => $route,
+                // ]);
+            // } else {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Payment initiation failed. Please try again.'
+            //     ], 400);
+            // }
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,

@@ -117,7 +117,7 @@ $(document).ready(function () {
             btnText.text('Book Seat');
         }
     });    // Handle booking form submission
-    $('#actualBookingForm').submit(function(e) {
+    $('#actualBookingForm1111111111111111111111111').submit(function(e) {
         e.preventDefault();
         
         // Validate seat selection before submission
@@ -136,54 +136,56 @@ $(document).ready(function () {
         }
         
         const paymentMethod = $('#payment_method').val();
-        if (paymentMethod === 'khalti') {
-            // Prevent normal form submission for Khalti
-            const amount = parseFloat($('input[name="price"]').val()) * 100;
-            const publicKey = window.khaltiPublicKey || '';
-            const bookingData = $(this).serializeArray();
-            var khaltiConfig = {
-                publicKey: publicKey,
-                productIdentity: $('input[name="route_id"]').val(),
-                productName: $('input[name="bus_name"]').val() || 'Bus Ticket',
-                productUrl: window.location.href,
-                eventHandler: {
-                    onSuccess: function(payload) {
-                        const postData = {};
-                        bookingData.forEach(function(item) { postData[item.name] = item.value; });
-                        postData['khalti_token'] = payload.token;
-                        postData['amount'] = amount;
-                        $.ajax({
-                            url: window.khaltiVerifyUrl || '',
-                            method: 'POST',
-                            data: postData,
-                            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                            success: function(response) {
-                                if (response.success && response.redirect_url) {
-                                    window.location.href = response.redirect_url;
-                                } else if (response.success) {
-                                    alert('Payment successful!');
-                                    window.location.reload();
-                                } else {
-                                    alert(response.message || 'Khalti payment verification failed.');
-                                }
-                            },
-                            error: function(xhr) {
-                                alert('Khalti payment verification failed.');
-                            }
-                        });
-                    },
-                    onError: function(error) {
-                        alert('Khalti payment error: ' + (error.message || error));
-                    },
-                    onClose: function() {
-                        // User closed Khalti widget
-                    }
-                }
-            };
-            var checkout = new KhaltiCheckout(khaltiConfig);
-            checkout.show({amount: amount});
-            return false;
-        }
+        // if (paymentMethod === 'khalti') {
+             
+
+            // // Prevent normal form submission for Khalti
+            // const amount = parseFloat($('input[name="price"]').val()) * 100;
+            // const publicKey = window.khaltiPublicKey || '';
+            // const bookingData = $(this).serializeArray();
+            // var khaltiConfig = {
+            //     publicKey: publicKey,
+            //     productIdentity: $('input[name="route_id"]').val(),
+            //     productName: $('input[name="bus_name"]').val() || 'Bus Ticket',
+            //     productUrl: window.location.href,
+            //     eventHandler: {
+            //         onSuccess: function(payload) {
+            //             const postData = {};
+            //             bookingData.forEach(function(item) { postData[item.name] = item.value; });
+            //             postData['khalti_token'] = payload.token;
+            //             postData['amount'] = amount;
+            //             $.ajax({
+            //                 url: window.khaltiVerifyUrl || '',
+            //                 method: 'POST',
+            //                 data: postData,
+            //                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            //                 success: function(response) {
+            //                     if (response.success && response.redirect_url) {
+            //                         window.location.href = response.redirect_url;
+            //                     } else if (response.success) {
+            //                         alert('Payment successful!');
+            //                         window.location.reload();
+            //                     } else {
+            //                         alert(response.message || 'Khalti payment verification failed.');
+            //                     }
+            //                 },
+            //                 error: function(xhr) {
+            //                     alert('Khalti payment verification failed.');
+            //                 }
+            //             });
+            //         },
+            //         onError: function(error) {
+            //             alert('Khalti payment error: ' + (error.message || error));
+            //         },
+            //         onClose: function() {
+            //             // User closed Khalti widget
+            //         }
+            //     }
+            // };
+            // var checkout = new KhaltiCheckout(khaltiConfig);
+            // checkout.show({amount: amount});
+        //     return false;
+        // }
         
         // Disable submit button and show loading
         const submitBtn = $('#book-btn');
@@ -198,13 +200,38 @@ $(document).ready(function () {
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
-            success: function(response) {
-                if (response.success) {
-                    if (response.redirect_url) {
-                        window.location.href = response.redirect_url;
-                    } else {
-                        window.location.href = '/userdashboard';
-                    }
+            success: function(response) { 
+                    let currentBooking = response.current_booking || null;
+                    let customer = response.customer || null;
+                    let route = response.route || null;
+                    if (response.success && currentBooking) {
+                        const response = fetch('https://dev.khalti.com/api/v2/epayment/initiate/', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'key fe52945464b045df9ab15b77fb763f28',  // ⚠️ Replace with your test key
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            return_url: 'http://localhost:8000/booking/confirmation/' + currentBooking.id,
+                            website_url: 'https://example.com/',
+                            amount: currentBooking.price * 100, // amount in paisa, i.e. 1000 = Rs. 10
+                            purchase_order_id: currentBooking.id,
+                            purchase_order_name: `Booking for ${currentBooking.bus_name} on ${route.trip_date}`,
+                            customer_info: {
+                                name: customer.name,
+                                email: customer.email,
+                                phone: customer.phone
+                            }
+                        })
+                    }).then(response => {
+                        console.log('Khalti payment initiated:', response);
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            window.location.href = '/userdashboard';
+                        }
+                    });
+                
                 } else {
                     alert(response.message || 'Booking failed. Please try again.');
                     resetBookButton();

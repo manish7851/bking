@@ -182,7 +182,11 @@
                         .addClass('btn-danger')
                         .html('Booked');
                     $('#seatSelectionModal').modal('hide');
-                    window.location.reload();
+                    alert('Booking created successfully!');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+
                 },
                 error: function(xhr) {
                     $btn.prop('disabled', false).removeClass('btn-danger').addClass('btn-primary').html('Confirm Booking');

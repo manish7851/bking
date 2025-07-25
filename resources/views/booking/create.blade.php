@@ -149,7 +149,7 @@
                             <span class="badge bg-primary">Selected</span>
                         </div>
                     </div>                    <!-- Booking Form -->                    <div id="bookingForm" style="display: none;">
-                        <form id="actualBookingForm" method="POST" action="{{ route('booking.prepare') }}" class="mt-4">
+                        <form id="actualBookingForm" method="POST" action="{{ route('userbookings.store') }}" class="mt-4">
                             @csrf
                             <input type="hidden" name="route_id" value="{{ $route->id }}">
                             <input type="hidden" name="customer_id" value="{{ $customer->id ?? '' }}">
@@ -176,7 +176,7 @@
                             <div class="payment-methods mb-4">
                                 <h5>Select Payment Method</h5>
                                 <div class="payment-options">
-                                    <div class="payment-option" data-method="esewa">
+                                    <!-- <div class="payment-option" data-method="esewa">
                                         <div class="d-flex align-items-center">
                                             <input type="radio" name="payment_method_radio" id="esewa" value="esewa" checked>
                                             <label for="esewa" class="ms-2">
@@ -184,7 +184,7 @@
                                             </label>
                                         </div>
                                         <small class="text-muted">Redirect to eSewa for secure payment</small>
-                                    </div>
+                                    </div> -->
                                     <div class="payment-option" data-method="khalti">
                                         <div class="d-flex align-items-center">
                                             <input type="radio" name="payment_method_radio" id="khalti" value="khalti">
@@ -210,7 +210,7 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
-<script src="https://khalti.s3.ap-south-1.amazonaws.com/KPG/dist/2020.12.17.0.0.0/khalti-checkout.iffe.js"></script>
+<!-- <script src="https://khalti.s3.ap-south-1.amazonaws.com/KPG/dist/2020.12.17.0.0.0/khalti-checkout.iffe.js"></script> -->
 
 <script>    // Set up global variables for payment handlers
     window.khaltiPublicKey = "{{ config('services.khalti.public_key') }}";
@@ -257,28 +257,28 @@ $(document).ready(function() {
             return obj;
         }, {});
 
-        // Validate prerequisites
-        if (!PaymentHandler.validatePrerequisites(formData)) {
-            e.preventDefault();
-            return false;
-        }
+        // // Validate prerequisites
+        // if (!PaymentHandler.validatePrerequisites(formData)) {
+        //     e.preventDefault();
+        //     return false;
+        // }
 
-        const paymentMethod = $('#payment_method').val();
+        // const paymentMethod = $('#payment_method').val();
         
-        // For eSewa, let the form submit normally
-        if (paymentMethod === 'esewa') {
-            const $submitBtn = $('#book-btn');
-            $submitBtn.prop('disabled', true).find('#btn-text').html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
-            return true; // Allow form to submit
-        }
+        // // For eSewa, let the form submit normally
+        // if (paymentMethod === 'esewa') {
+        //     const $submitBtn = $('#book-btn');
+        //     $submitBtn.prop('disabled', true).find('#btn-text').html('<i class="fas fa-spinner fa-spin me-2"></i>Processing...');
+        //     return true; // Allow form to submit
+        // }
         
         // For Khalti, prevent form submission and handle via Khalti checkout
         if (paymentMethod === 'khalti') {
             e.preventDefault();
-            const amount = parseFloat(formData.price) * 100;
-            khaltiHandler.process(formData, amount, window.khaltiPublicKey).catch(error => {
-                PaymentHandler.handleError(error, 'gateway');
-            });
+            // const amount = parseFloat(formData.price) * 100;
+            // khaltiHandler.process(formData, amount, window.khaltiPublicKey).catch(error => {
+            //     PaymentHandler.handleError(error, 'gateway');
+            // });
             return false;
         }
     });
