@@ -294,20 +294,24 @@ class BookingController extends Controller
         }
     }
 
-    public function getBookedSeats($route_id)
-    {
-        try {
-            $bookedSeats = Booking::where('route_id', $route_id)
-                ->whereIn('status', ['Booked', 'confirmed'])
-                ->pluck('seat')
-                ->toArray();
 
-            return response()->json($bookedSeats);
-        } catch (\Exception $e) {
-            Log::error('Failed to get booked seats: ' . $e->getMessage());
-            return response()->json(['error' => 'Could not retrieve booked seats.'], 500);
-        }
+public function getBookedSeats(Request $request)
+{
+    try {
+        $routeId = $request->query('route_id');
+        $busId = $request->query('bus_id');
+        $bookedSeats = Booking::where('route_id', $routeId)
+            ->where('bus_id', $busId)
+            ->whereIn('status', ['Booked', 'confirmed'])
+            ->pluck('seat')
+            ->toArray();
+
+        return response()->json(['data' => $bookedSeats]);
+    } catch (\Exception $e) {
+        Log::error('Failed to get booked seats: ' . $e->getMessage());
+        return response()->json(['error' => 'Could not retrieve booked seats.'], 500);
     }
+}
 
     public function fetchRoutes(Request $request)
     {

@@ -22,7 +22,13 @@ return new class extends Migration
     public function down()
     {
         Schema::table('bookings', function (Blueprint $table) {
-            $table->dropColumn(['payment_method', 'payment_details']);
+            if (Schema::hasColumn('bookings', 'payment_details')) {
+                $table->dropColumn('payment_details');
+            }
+            // payment_method is dropped by an earlier migration
+            if (Schema::hasColumn('bookings', 'payment_method')) {
+                $table->dropColumn('payment_method');
+            }
         });
     }
 };

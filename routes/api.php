@@ -1,40 +1,25 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\BusTrackingApiController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\RouteController;
 use App\Http\Controllers\BusController;
+use App\Http\Controllers\BookingController;
 
-Route::get('/test-route', function () {
-    return response()->json(['message' => 'Test OK']);
+// Public routes
+Route::post('/signup', [AdminController::class, 'register']); 
+Route::post('/register', [AdminController::class, 'register']); 
+Route::post('/login', [AdminController::class, 'login']);
+Route::get('/admins', [AdminController::class, 'index']); 
+
+Route::get('/routes', [RouteController::class, 'index'])->name('routes.index');
+Route::get('/routes/search', [RouteController::class, 'search'])->name('search');
+
+// Authenticated routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AdminController::class, 'logout']);
+    Route::get('/routes', [RouteController::class, 'index']);
+    Route::get('routes/{route}/buses', [BusController::class, 'getBuses']);
+    Route::get('bookings/seats', [BookingController::class, 'getBookedSeats']);
 });
-// // GPS tracking endpoint for bus location updates
-Route::post('/bus/location/update', [BusTrackingApiController::class, 'updateLocation']);
-
-// // GPS tracking endpoint for bus location updates from TCP server
-// Route::post('/bus/location/update-gps', [BusController::class, 'updateGps']);
-
-// // Route to get bus information by IMEI number
-// Route::get('/bus/by-imei', [BusTrackingApiController::class, 'getBusByImei']);
-
-// // Bus location API endpoints
-// Route::prefix('buses')->group(function () {
-//     // Get all live/active buses
-//     Route::get('/live', [BusController::class, 'getLiveBuses']);
-    
-//     // Get single bus location
-//     Route::get('/{id}/location', [BusController::class, 'getLocation']);
-    
-//     // Get single bus location history
-//     Route::get('/{id}/location-history', [BusController::class, 'locationHistory']);
-    
-//     // Get single bus locations with bus info
-//     Route::get('/{id}/locations', [BusController::class, 'getLocations']);
-// });
-
-// // Update bus location manually (for testing or manual updates)
-// Route::post('/bus/{id}/update-location', [BusController::class, 'updateLocation']);
-
-// // (Optional) Add more API routes as needed
-// Route::post('/bus/start-tracking', [BusTrackingApiController::class, 'startTracking']);
-// Route::post('/bus/end-tracking', [BusTrackingApiController::class, 'endTracking']);
-Route::get('/bus/location/history/{id}', [BusTrackingApiController::class, 'getLocationHistory']);

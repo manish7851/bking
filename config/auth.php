@@ -43,6 +43,14 @@ return [
             'driver' => 'session',
             'provider' => 'customers',
         ],
+        'api' => [
+            'driver' => 'sanctum',
+            'provider' => 'users', // Default for API tokens
+        ],
+        'customer-api' => [ // New guard for customer API tokens
+            'driver' => 'sanctum',
+            'provider' => 'customers',
+        ],
     ],
 
     /*

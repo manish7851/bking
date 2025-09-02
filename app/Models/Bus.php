@@ -21,13 +21,14 @@ protected $fillable = [
     'current_tracking_id',
     'status',
     'custom_path_source',
-    'custom_path_destination'
+    'custom_path_destination',
+    'total_seats'
 ];
 
 
- public function routes()
+ public function route()
     {
-        return $this->hasMany(Route::class);
+        return $this->belongsTo(Route::class, 'route_id');
     }
 
 
@@ -35,6 +36,11 @@ protected $fillable = [
 {
     return $this->hasMany(Booking::class, 'bus_number', 'bus_number');
 }
+
+    public function routes()
+    {
+        return $this->hasMany(Route::class, 'bus_id');
+    }
 
     public function locations()
     {

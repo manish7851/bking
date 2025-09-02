@@ -37,7 +37,7 @@ class Kernel extends ConsoleKernel
     /**
      * Register custom Artisan commands.
      */
-    protected $commands = [
+protected $commands = [
         \App\Console\Commands\ListenToGPSUpdates::class,
     ];
 }

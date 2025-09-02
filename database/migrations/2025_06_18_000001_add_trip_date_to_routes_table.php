@@ -8,14 +8,14 @@ return new class extends Migration {
     public function up()
     {
         Schema::table('routes', function (Blueprint $table) {
-            $table->date('trip_date')->nullable()->after('destination');
+            // $table->date('trip_date')->nullable()->after('destination');
         });
     }
 
     public function down()
     {
         Schema::table('routes', function (Blueprint $table) {
-            $table->dropColumn('trip_date');
+            // $table->dropColumn('trip_date');
         });
     }
 };

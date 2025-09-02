@@ -1,136 +1,163 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Bus;
+use Carbon\Carbon;
 
-use App\Models\Route;
-use Illuminate\Container\Attributes\Log;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log as FacadesLog;
-
-use function Illuminate\Log\log;
+use App\Models\Bus;
+use App\Models\Route;
+use Illuminate\Support\Facades\Log;
 
 class RouteController extends Controller
 {
-    // Display a listing of the routes
-    public function index()
-    {
-        $routes = Route::with('bus')->get(); // This loads bus relation
-        $buses = Bus::all();
-        return view('routes.routes', compact('routes', 'buses'));
+    // List all routes (Web + JSON)
+public function index(Request $request)
+{
+    $routes = Route::with('bus')->get();
+    $buses = Bus::all();
+
+    $data = $routes->map(function ($route) {
+        $isToday = $route->trip_date && Carbon::parse($route->trip_date)->isToday();
+
+        return [
+            'route_id'    => $route->id,
+            'source'      => $route->source,
+            'destination' => $route->destination,
+            'trip_date'   => $route->trip_date,
+            'price'       => $route->price,
+            'bus' => [
+                'id'          => $route->bus->id ?? null,
+                'name'        => $route->bus->bus_name ?? '',   // explicitly pathaune
+                'number'      => $route->bus->bus_number ?? '',
+                'total_seats' => $route->bus->total_seats ?? 0,
+                'status'      => $route->bus->status ?? 'offline',
+            ],
+        ];
+    });
+
+    if ($request->wantsJson()) {
+        return response()->json([
+            'success' => true,
+            'routes'  => $data
+        ]);
     }
 
-    // Show the edit form for a specific route
-    public function edit($id)
+  return view('routes.routes', compact('routes','buses'));
+
+}
+
+    // Show a single route
+    public function edit(Request $request, $id)
     {
         $route = Route::findOrFail($id);
         $buses = Bus::all();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'route' => $route,
+                'buses' => $buses
+            ]);
+        }
+
         return view('routes.edit', compact('route', 'buses'));
     }
 
+    // Create a new route
     public function store(Request $request)
     {
-        // Validate the form inputs
-        $validatedData = $request->validate([
+        $validated = $request->validate([
             'bus_id' => 'required|exists:buses,id',
             'source' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
             'price' => 'required|numeric',
-            'trip_date' => [
-            'required',
-            'date_format:Y-m-d\TH:i',
-            'after_or_equal:today',
-            ],
+            'trip_date' => 'required|date_format:Y-m-d\TH:i|after_or_equal:today',
         ]);
-    
-        // Verify bus exists and is available
-        $bus = Bus::findOrFail($validatedData['bus_id']);
-        
-        // Create a new route
-        Route::create([
-            'bus_id' => $validatedData['bus_id'],
-            'source' => $validatedData['source'],
-            'destination' => $validatedData['destination'],
+
+        $route = Route::create([
+            'bus_id' => $validated['bus_id'],
+            'source' => $validated['source'],
+            'destination' => $validated['destination'],
             'source_latitude' => $request->input('source_latitude'),
             'source_longitude' => $request->input('source_longitude'),
             'destination_latitude' => $request->input('destination_latitude'),
             'destination_longitude' => $request->input('destination_longitude'),
-            'price' => $validatedData['price'],
-            'trip_date' => $validatedData['trip_date'],
+            'price' => $validated['price'],
+            'trip_date' => $validated['trip_date'],
         ]);
-    
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'route' => $route], 201);
+        }
+
         return redirect()->back()->with('success', 'Route created successfully!');
     }
 
-
-    public function destroy($id)
-{
-    $route = Route::findOrFail($id);
-    $route->delete();
-
-    return redirect()->back()->with('success', 'Route deleted successfully!');
-}
-
-
-    // Update the route information
+    // Update a route
     public function update(Request $request, $id)
     {
-        // Validate the data
-        $validatedData = $request->validate([
+        $validated = $request->validate([
             'source' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
             'price' => 'required|numeric',
+            'trip_date' => 'required|date_format:Y-m-d',
         ]);
 
-        // Find the route by ID and update the details
         $route = Route::findOrFail($id);
-        $route->source = $request->input('source');
-        $route->destination = $request->input('destination');
-        $route->source_latitude = $request->input('source_latitude');
-        $route->source_longitude = $request->input('source_longitude');
-        $route->destination_latitude = $request->input('destination_latitude');
-        $route->destination_longitude = $request->input('destination_longitude');
-        $route->price = $request->input('price');
-        $route->save();
+        $route->update([
+            'source' => $validated['source'],
+            'destination' => $validated['destination'],
+            'source_latitude' => $request->input('source_latitude'),
+            'source_longitude' => $request->input('source_longitude'),
+            'destination_latitude' => $request->input('destination_latitude'),
+            'destination_longitude' => $request->input('destination_longitude'),
+            'price' => $validated['price'],
+            'trip_date' => $validated['trip_date'],
+        ]);
 
-        // Redirect back with a success message
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'route' => $route]);
+        }
+
         return redirect()->route('routes.index')->with('success', 'Route updated successfully!');
     }
 
-    public function showRoutePicker()
+    // Delete a route
+    public function destroy(Request $request, $id)
     {
-        return view('routes.route-picker');
+        $route = Route::findOrFail($id);
+        $route->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Route deleted successfully!']);
+        }
+
+        return redirect()->back()->with('success', 'Route deleted successfully!');
     }
+
+    // Search routes
     public function search(Request $request)
-    {        
+    {
         try {
-            $buses = Bus::all();
-            // Build the route search query
             $query = Route::with('bus');
 
             if ($request->filled('source')) {
-                $query->where('source', 'LIKE', '%' . $request->input('source') . '%');
+                $query->where('source', 'LIKE', '%' . $request->source . '%');
             }
-
             if ($request->filled('destination')) {
-                $query->where('destination', 'LIKE', '%' . $request->input('destination') . '%');
+                $query->where('destination', 'LIKE', '%' . $request->destination . '%');
+            }
+            if ($request->filled('date')) {
+               $query->whereDate('trip_date', $request->date);
             }
 
-            if ($request->filled('date')) {
-                // Compare only the date part of trip_date with the provided date
-                $query->whereDate('trip_date', '=', trim($request->date));
-            } /*else {
-                // Compare only the date part of trip_date with the provided date
-                $query->whereDate('trip_date', '>=', now()->toDateString());
-            }*/
-            $query->orderBy('trip_date', 'desc');
-            $routes = $query->get();
-            return view('routes.routes', compact('routes', 'buses'));
+            $routes = $query->orderBy('trip_date', 'desc')->get();
+            $buses = Bus::all();
 
+            return response()->json(['success' => true, 'routes' => $routes, 'buses' => $buses]);
         } catch (\Exception $e) {
-            FacadesLog::error('User booking search error: ' . $e->getMessage());
-            return back()->with('error', 'Unable to search routes. Please try again.');
+            Log::error('Route search error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Unable to search routes'], 500);
         }
     }
-   
 }

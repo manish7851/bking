@@ -7,11 +7,11 @@ use App\Models\Bus;
 use App\Models\Route;
 use App\Models\Booking;
 use App\Models\Customer;
-use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    public function index()
+    // Admin dashboard stats
+    public function index(Request $request)
     {
         $stats = [
             'buses' => Bus::count(),
@@ -19,72 +19,54 @@ class DashboardController extends Controller
             'bookings' => Booking::count(),
             'customers' => Customer::count(),
         ];
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'stats' => $stats]);
+        }
+
         return view('dashboard', compact('stats'));
     }
 
-    /**
-     * Show the GPS tracking dashboard.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function tracking()
+    // GPS tracking dashboard
+    public function tracking(Request $request)
     {
-        // Get total route count
         $routeCount = Route::count();
-        
-        // Get data for active buses
         $activeBuses = Bus::where('tracking_enabled', true)->count();
-        
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'route_count' => $routeCount,
+                'active_buses' => $activeBuses
+            ]);
+        }
+
         return view('dashboard.tracking', compact('routeCount', 'activeBuses'));
-    }    // Method to handle user dashboard
-    public function userDashboard()
-    {   
+    }
+
+    // User dashboard
+    public function userDashboard(Request $request)
+    {
         $customerId = session('customer_id');
-        
-        // Enhanced logging for debugging
-        \Illuminate\Support\Facades\Log::info('DashboardController: userDashboard accessed', [
-            'customer_id' => $customerId,
-            'has_new_booking_in_session' => session()->has('new_booking'),
-            'session_data' => [
-                'keys' => array_keys(session()->all()),
-                'new_booking_data' => session('new_booking') ? [
-                    'id' => session('new_booking')->id ?? 'N/A',
-                    'customer_id' => session('new_booking')->customer_id ?? 'N/A'
-                ] : null
-            ]
-        ]);
-        
-        // If no customer_id in session, try to handle gracefully
+
         if (!$customerId) {
-            \Illuminate\Support\Facades\Log::error('DashboardController: No customer_id in session');
-            
-            // Try to get from new_booking session if available
             if (session()->has('new_booking')) {
                 $newBooking = session('new_booking');
-                if ($newBooking && isset($newBooking->customer_id)) {
-                    $customerId = $newBooking->customer_id;
-                    session(['customer_id' => $customerId]);
-                    \Illuminate\Support\Facades\Log::info('DashboardController: Recovered customer_id from new_booking', [
-                        'customer_id' => $customerId
-                    ]);
-                }
+                $customerId = $newBooking->customer_id ?? null;
+                session(['customer_id' => $customerId]);
             }
-            
-            // If still no customer_id, redirect to login
+
             if (!$customerId) {
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Please login to view dashboard'], 401);
+                }
                 return redirect()->route('userlogin')->with('error', 'Please login to view your dashboard');
             }
         }
-        
-        // Get the most recent booking for the main display
+
         $recentBooking = session('new_booking') ? [session('new_booking')] : [];
+        if (session('new_booking')) session()->forget('new_booking');
 
-        // Clear the new_booking session after using it
-        if (session('new_booking')) {
-            session()->forget('new_booking');
-        }
-
-        // If there's no recent booking in session, get the latest completed booking
         if (empty($recentBooking)) {
             $latestBooking = Booking::where('customer_id', $customerId)
                 ->where('payment_status', 'completed')
@@ -92,33 +74,18 @@ class DashboardController extends Controller
                 ->first();
             $recentBooking = $latestBooking ? [$latestBooking] : [];
         }
-        
-        // Get all booking history for this customer
+
         $allBookings = Booking::where('customer_id', $customerId)
             ->where('payment_status', 'completed')
             ->orderBy('created_at', 'desc')
             ->get();
-        
-        \Illuminate\Support\Facades\Log::info('DashboardController: Booking data retrieved', [
-            'customer_id' => $customerId,
-            'recent_booking_count' => count($recentBooking),
-            'all_bookings_count' => $allBookings->count(),
-            'booking_ids' => $allBookings->pluck('id')->toArray()
-        ]);
-        
-        // Convert to collection for recent booking
-        $bookings = collect($recentBooking);
-          // Format the booking data for the view
-        $formattedBookings = $bookings->map(function ($booking) {
-            // Determine payment status display
+
+        $bookings = collect($recentBooking)->map(function ($booking) {
             $paymentStatus = $booking->payment_status ?? 'unknown';
             $paymentMethod = $booking->payment_method ?? 'N/A';
-            
-            // Create status display text and badge class
             $statusInfo = $this->getStatusInfo($paymentStatus, $paymentMethod);
-            
-            // Make sure all necessary fields exist
-            return (object) [
+
+            return (object)[
                 'id' => $booking->id,
                 'payment_status' => $paymentStatus,
                 'payment_method' => $paymentMethod,
@@ -134,42 +101,41 @@ class DashboardController extends Controller
                 'payment_details' => $booking->payment_details ?? null,
                 'created_at' => $booking->created_at ?? now(),
                 'pickup_location' => $booking->pickup_location ?? '',
-                'pickup_remark' => $booking->pickup_remark ?? '',   
+                'pickup_remark' => $booking->pickup_remark ?? '',
                 'dropoff_location' => $booking->dropoff_location ?? '',
                 'dropoff_remark' => $booking->dropoff_remark ?? ''
             ];
         });
-        
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'recent_bookings' => $bookings,
+                'all_bookings' => $allBookings
+            ]);
+        }
+
         return view('userdashboard', [
-            'bookings' => $formattedBookings,
+            'bookings' => $bookings,
             'allBookings' => $allBookings
         ]);
-    }    /**
-     * Get status information for display
-     */
+    }
+
+    // Get status information for display
     private function getStatusInfo($paymentStatus, $paymentMethod)
     {
         switch (strtolower($paymentStatus)) {
             case 'completed':
-                if (strtolower($paymentMethod) === 'esewa') {
-                    return [
-                        'text' => 'Paid via eSewa',
-                        'badge_class' => 'bg-success payment-status-paid',
-                        'icon' => 'fas fa-check-circle'
-                    ];
-                } elseif (strtolower($paymentMethod) === 'khalti') {
-                    return [
-                        'text' => 'Paid via Khalti',
-                        'badge_class' => 'bg-success payment-status-paid',
-                        'icon' => 'fas fa-check-circle'
-                    ];
-                } else {
-                    return [
-                        'text' => 'Payment Completed',
-                        'badge_class' => 'bg-success payment-status-paid',
-                        'icon' => 'fas fa-check-circle'
-                    ];
-                }
+                $text = match (strtolower($paymentMethod)) {
+                    'esewa' => 'Paid via eSewa',
+                    'khalti' => 'Paid via Khalti',
+                    default => 'Payment Completed',
+                };
+                return [
+                    'text' => $text,
+                    'badge_class' => 'bg-success payment-status-paid',
+                    'icon' => 'fas fa-check-circle'
+                ];
             case 'pending':
                 return [
                     'text' => 'Payment Pending',

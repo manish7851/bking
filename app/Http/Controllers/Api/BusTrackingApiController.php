@@ -11,62 +11,54 @@ use Illuminate\Support\Facades\Log;
 
 class BusTrackingApiController extends Controller
 {
-    /**
-     * Update bus location.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+    public function startTracking(Request $request)
+    {
+        $request->validate([
+            'bus_id' => 'required|exists:buses,id',
+        ]);
+
+        $bus = Bus::findOrFail($request->bus_id);
+        $bus->enableTracking();
+
+        $tracking = BusTracking::create([
+            'bus_id' => $bus->id,
+            'started_at' => now(),
+        ]);
+        $bus->current_tracking_id = $tracking->id;
+        $bus->save();
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'tracking_id' => $tracking->id, 'bus_id' => $bus->id]);
+        }
+
+        return redirect()->back()->with('success', 'Tracking started for bus.');
+    }
     public function updateLocation(Request $request)
     {
-         Log::info('bus location update', [
-                    'bus_id' => $request->bus_id,
-                    'request_data' => $request->all()
-                ]);
-                
         $request->validate([
             'bus_id' => 'required|exists:buses,id',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
             'speed' => 'nullable|numeric',
             'heading' => 'nullable|numeric',
-            'api_key' => 'required'
+            'api_key' => 'nullable|string'
         ]);
 
-        // Simple API key check - in a real application, you'd use proper API authentication
-        // if ($request->api_key != config('services.tracking.api_key')) {
-        //     return response()->json(['error' => 'Unauthorized'], 401);
-        // }
-        
+        // API key check only for JSON requests
+        if ($request->has('api_key') && $request->api_key != config('services.tracking.api_key') && $request->wantsJson()) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         $bus = Bus::findOrFail($request->bus_id);
+
         if (!$bus->tracking_enabled) {
-            return response()->json([
-                'error' => 'Tracking is disabled for this bus',
-                'success' => false
-            ]);
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'error' => 'Tracking is disabled for this bus']);
+            }
+            return back()->with('error', 'Tracking is disabled for this bus');
         }
 
-        // Use current_tracking_id if present, otherwise create a new BusTracking
-        if ($bus->current_tracking_id) {
-            $busTracking = BusTracking::find($bus->current_tracking_id);
-            // If not found (shouldn't happen), fallback to create
-            // if (!$busTracking) {
-            //     $busTracking = BusTracking::create([
-            //         'bus_id' => $bus->id,
-            //         'started_at' => now()
-            //     ]);
-            //     $bus->current_tracking_id = $busTracking->id;
-            //     $bus->save();
-            // }
-        } else {
-            // $busTracking = BusTracking::create([
-            //     'bus_id' => $bus->id,
-            //     'started_at' => now()
-            // ]);
-            // $bus->current_tracking_id = $busTracking->id;
-            // $bus->save();
-        }
-
+        // Update bus location
         $bus->updateLocation(
             $request->latitude,
             $request->longitude,
@@ -74,186 +66,77 @@ class BusTrackingApiController extends Controller
             $request->heading
         );
 
-        $location = new BusLocation([
-            'bus_id' => $bus->id,
-            'bus_tracking_id' => $busTracking->id,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'speed' => $request->speed,
-            'heading' => $request->heading,
-            'recorded_at' => now()
-        ]);
-        $busTracking->locations()->save($location);
-         Log::info('bus location update success', [
-                    'bus_id'=> $request->bus_id,
-                    'location' => $location->all()
-                ]);
-        return response()->json([
-            'success' => true,
-            'message' => 'Location updated successfully',
-            'bus' => [
-                'id' => $bus->id,
-                'bus_name' => $bus->bus_name,
-                'bus_number' => $bus->bus_number,
-                'latitude' => $bus->latitude,
-                'longitude' => $bus->longitude,
-                'speed' => $bus->speed,
-                'heading' => $bus->heading,
-                'status' => $bus->status,
-                'last_tracked_at' => $bus->last_tracked_at
-            ]
-        ]);
+        $data = [
+            'id' => $bus->id,
+            'bus_name' => $bus->bus_name,
+            'bus_number' => $bus->bus_number,
+            'latitude' => $bus->latitude,
+            'longitude' => $bus->longitude,
+            'speed' => $bus->speed,
+            'heading' => $bus->heading,
+            'status' => $bus->status,
+            'last_tracked_at' => $bus->last_tracked_at
+        ];
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'bus' => $data]);
+        }
+
+        return redirect()->route('buses.track', ['id' => $bus->id])
+                         ->with('success', 'Location updated successfully');
     }
 
-    /**
-     * Get all active buses with location data.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function getBuses(Request $request)
     {
-        $request->validate([
-            'api_key' => 'required'
-        ]);
-        
-        // Simple API key check
-        if ($request->api_key != config('services.tracking.api_key')) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-        
         $buses = Bus::where('tracking_enabled', true)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->get([
-                'id', 'bus_name', 'bus_number', 'latitude', 'longitude', 
-                'speed', 'heading', 'status', 'last_tracked_at'
-            ]);
-            
-        return response()->json([
-            'success' => true,
-            'count' => $buses->count(),
-            'buses' => $buses
-        ]);
+            ->get(['id','bus_name','bus_number','latitude','longitude','speed','heading','status','last_tracked_at']);
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'count' => $buses->count(), 'buses' => $buses]);
+        }
+
+        return view('buses.index', compact('buses'));
     }
 
-    /**
-     * Get location history for a specific bus.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function getLocationHistory(Request $request, $id)
     {
-        $request->validate([
-            'api_key' => 'required',
-            'limit' => 'nullable|integer|min:1|max:1000',
-            'bus_tracking_id' => 'nullable|exists:bus_trackings,id'
-        ]);
-        
-        // Simple API key check
-        if ($request->api_key != config('services.tracking.api_key')) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-        
         $limit = $request->input('limit', 100);
-        $busTrackingId = $request->input('bus_tracking_id');
-        if ($busTrackingId) {
-            $busTracking = BusTracking::where('bus_id', $id)->where('id', $busTrackingId)->firstOrFail();
-            $locations = $busTracking->locations()->orderBy('recorded_at', 'desc')->limit($limit)->get([
-                'id', 'latitude', 'longitude', 'speed', 'heading', 'recorded_at'
-            ]);
-        } else {
-            // $busTrackings = BusTracking::where('bus_id', $id)->pluck('id');
-            // $locations = BusLocation::whereIn('bus_tracking_id', $busTrackings)
-            //     ->orderBy('recorded_at', 'desc')
-            //     ->limit($limit)
-            //     ->get([
-            //         'id', 'latitude', 'longitude', 'speed', 'heading', 'recorded_at'
-            //     ]);
+        $busTracking = BusTracking::where('bus_id', $id)->latest('started_at')->first();
+        $locations = $busTracking ? $busTracking->locations()->orderByDesc('recorded_at')->limit($limit)->get() : collect();
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'bus_id' => $id, 'count' => $locations->count(), 'locations' => $locations]);
         }
-        return response()->json([
-            'success' => true,
-            'bus_id' => $id,
-            'count' => $locations->count(),
-            'locations' => $locations
-        ]);
+
+        return view('buses.locations', compact('locations', 'id'));
     }
 
-    /**
-     * Start a new tracking session for a bus.
-     * Sets tracking_enabled to true, creates a new BusTracking, and updates current_tracking_id.
-     */
-    public function startTracking(Request $request)
-    {
-        $request->validate([
-            'bus_id' => 'required|exists:buses,id',
-            'api_key' => 'required'
-        ]);
-        // Simple API key check
-        // if ($request->api_key != config('services.tracking.api_key')) {
-        //     return response()->json(['error' => 'Unauthorized'], 401);
-        // }
-        $bus = Bus::findOrFail($request->bus_id);
-        if ($bus->current_tracking_id) {
-            return response()->json(['error' => 'Tracking already started', 'success' => false], 400);
-        }
-        $busTracking = BusTracking::create([
-            'bus_id' => $bus->id,
-            'started_at' => now()
-        ]);
-        $bus->tracking_enabled = true;
-        $bus->current_tracking_id = $busTracking->id;
-        $bus->last_tracked_at = now();
-        $bus->save();
-        return redirect()->route('buses.track', ['id' => $bus->id]);
-    }
-
-    /**
-     * End the current tracking session for a bus.
-     * Sets ended_at on BusTracking, disables tracking, and clears current_tracking_id.
-     */
     public function endTracking(Request $request)
     {
         $request->validate([
             'bus_id' => 'required|exists:buses,id',
-            'api_key' => 'required'
+            'tracking_id' => 'required|exists:bus_trackings,id',
         ]);
-        // Simple API key check
-        // if ($request->api_key != config('services.tracking.api_key')) {
-        //     return response()->json(['error' => 'Unauthorized'], 401);
-        // }
+
         $bus = Bus::findOrFail($request->bus_id);
-        if (!$bus->current_tracking_id) {
-            return response()->json(['error' => 'No active tracking session', 'success' => false], 400);
-        }
-        $busTracking = BusTracking::find($bus->current_tracking_id);
-        if ($busTracking && !$busTracking->ended_at) {
-            $busTracking->ended_at = now();
-            $busTracking->save();
-        }
-        // $bus->tracking_enabled = false;
+        $tracking = BusTracking::where('id', $request->tracking_id)
+                               ->where('bus_id', $bus->id)
+                               ->whereNull('ended_at')
+                               ->firstOrFail();
+
+        $bus->disableTracking();
+        $tracking->update(['ended_at' => now()]);
+
+        // Clear current_tracking_id from the bus
         $bus->current_tracking_id = null;
         $bus->save();
 
-        return redirect()->route('buses.track', ['id' => $bus->id]);
-    }
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Tracking ended successfully.']);
+        }
 
-    /**
-     * Get all tracking sessions for a specific bus.
-     *
-     * @param int $busId
-     * @return \Illuminate\Http\Response
-     */
-    public function getTrackingList($busId)
-    {
-        $bus = Bus::findOrFail($busId);
-        $trackings = $bus->trackings()->orderByDesc('started_at')->get();
-        return response()->json([
-            'success' => true,
-            'bus_id' => $bus->id,
-            'trackings' => $trackings
-        ]);
+        return redirect()->back()->with('success', 'Tracking ended for bus.');
     }
 }

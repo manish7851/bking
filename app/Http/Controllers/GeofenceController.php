@@ -14,7 +14,7 @@ class GeofenceController extends Controller
         $geofences = Geofence::all();
 
         if ($request->wantsJson()) {
-            return response()->json(['data' => $geofences], 200);
+            return response()->json(['success' => true, 'data' => $geofences], 200);
         }
 
         return view('geofences.index', compact('geofences'));
@@ -33,28 +33,32 @@ class GeofenceController extends Controller
         $geofence = Geofence::create($validated);
 
         if ($request->wantsJson()) {
-            return response()->json(['data' => $geofence], 201);
+            return response()->json(['success' => true, 'data' => $geofence], 201);
         }
 
         return redirect()->route('geofences.index')->with('success', 'Geofence created successfully!');
     }
 
     // Delete a geofence (Admin UI)
-    public function destroy(Geofence $geofence)
+    public function destroy(Request $request, Geofence $geofence)
     {
         $geofence->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Geofence deleted successfully!'], 200);
+        }
 
         return redirect()->route('geofences.index')->with('success', 'Geofence deleted successfully!');
     }
 
     // List geofence events for a bus (API)
-    public function busEvents(int $busId)
+    public function busEvents(Request $request, int $busId)
     {
         $events = GeofenceEvent::where('bus_id', $busId)
             ->orderBy('event_time', 'desc')
             ->get();
 
-        return response()->json(['data' => $events], 200);
+        return response()->json(['success' => true, 'data' => $events], 200);
     }
 
     // Log a geofence event (API)
@@ -69,6 +73,6 @@ class GeofenceController extends Controller
 
         $event = GeofenceEvent::create($validated);
 
-        return response()->json(['data' => $event], 201);
+        return response()->json(['success' => true, 'data' => $event], 201);
     }
 }

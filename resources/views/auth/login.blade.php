@@ -55,7 +55,7 @@
 <body>
     <div class="login-card">
         <div class="login-logo">
-          <img src="{{ asset('buslogo.png') }}" alt="Bus Logo">
+          <img src="{{ asset('storage/buslogo.png') }}" alt="Bus Logo">
 
         </div>
         <h2>Login in to Bus Booking</h2>

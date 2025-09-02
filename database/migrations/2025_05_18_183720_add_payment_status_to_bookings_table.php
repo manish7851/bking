@@ -6,19 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        // This migration is now a no-op to avoid duplicate column errors.
+        Schema::table('bookings', function (Blueprint $table) {
+            $table->string('payment_status')->nullable()->after('status');
+            $table->string('payment_method')->nullable()->after('payment_status');
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        // This migration is now a no-op to avoid duplicate column errors.
+        Schema::table('bookings', function (Blueprint $table) {
+            $table->dropColumn(['payment_status', 'payment_method']);
+        });
     }
 };

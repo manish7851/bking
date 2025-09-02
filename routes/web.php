@@ -11,7 +11,11 @@ use App\Http\Controllers\BusController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\AuthController;
 
+Route::post('/admins', [AuthController::class, 'userCreate']);
+// Route::post('/login', [AuthController::class, 'login']);
+// Route::get('/admins', [AdminController::class, 'index']);
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -23,7 +27,7 @@ use App\Http\Controllers\SubscriptionController;
 |
 */
 
-    // Root route - always show home page
+// Root route - always show home page
 Route::get('/', function () {
     return view('home');
 });
@@ -98,7 +102,7 @@ Route::middleware(['customer.auth'])->group(function () {
 Route::get('/geofences', [App\Http\Controllers\GeofenceController::class, 'index'])->name('geofences.index');
 Route::delete('/geofences/{id}', [App\Http\Controllers\GeofenceController::class, 'destroy'])->name('geofences.destroy');
 
- 
+
 // eSewa Payment Routes
 Route::get('/payment/esewa/{bookingId}', [App\Http\Controllers\PaymentController::class, 'initiateEsewaPayment'])->name('payment.esewa.payment');
 Route::get('/payment/esewa/success', [App\Http\Controllers\PaymentController::class, 'esewaSuccess'])->name('payment.esewa.success');
@@ -122,7 +126,7 @@ Route::get('/buses/track/all', [App\Http\Controllers\BusController::class, 'trac
 Route::get('/buses/track/all/data', [App\Http\Controllers\BusController::class, 'getLiveBuses'])->name('buses.track.all.data');
 Route::get('/buses/{id}/locations', [App\Http\Controllers\BusController::class, 'getLocations'])->name('buses.locations');
 
-Route::match(['get', 'post'], '/logout', function(Request $request) {
+Route::match(['get', 'post'], '/logout', function (Request $request) {
     Auth::logout();
     $request->session()->invalidate();
     $request->session()->regenerateToken();
@@ -151,10 +155,10 @@ Route::middleware(['customer.auth'])->group(function () {
     // Booking routes
     Route::get('/userbookings/create', [App\Http\Controllers\BookingController::class, 'userCreate'])->name('userbookings.create');
     Route::post('/userbookings/store', [App\Http\Controllers\BookingController::class, 'store'])->name('userbookings.store');
-    
+
     // eSewa routes
     Route::post('payment/esewa/process', [App\Http\Controllers\EsewaPaymentController::class, 'process'])->name('payment.esewa.process');
-Route::get('/payment/esewa/success', [PaymentController::class, 'esewaSuccess'])->name('payment.esewa.success');
+    Route::get('/payment/esewa/success', [PaymentController::class, 'esewaSuccess'])->name('payment.esewa.success');
     Route::get('payment/esewa/failure', [App\Http\Controllers\EsewaPaymentController::class, 'failure'])->name('payment.esewa.failure');
 
     // Khalti routes
@@ -167,7 +171,7 @@ Route::get('/userdashboard', [App\Http\Controllers\DashboardController::class, '
     ->middleware('customer.auth')
     ->name('userdashboard');
 Route::get('/userbookings', [App\Http\Controllers\BookingController::class, 'usersBookings'])->name('userbookings');
-Route::get('/userbookings/search', [App\Http\Controllers\UserBookingController::class, 'search'])->name('userbookings.search');// Customer password reset routes
+Route::get('/userbookings/search', [App\Http\Controllers\UserBookingController::class, 'search'])->name('userbookings.search'); // Customer password reset routes
 Route::get('customer/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('customer.password.request');
 Route::post('customer/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('customer.password.email');
 Route::get('customer/password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('customer.password.reset');
@@ -189,7 +193,7 @@ Route::post('/bookings', [App\Http\Controllers\BookingController::class, 'store'
 Route::put('/buses/{id}', [App\Http\Controllers\BusController::class, 'update'])->name('buses.update');
 
 // Route management
-Route::prefix('routes')->group(function() {
+Route::prefix('routes')->group(function () {
     Route::get('/', [App\Http\Controllers\RouteController::class, 'index'])->name('routes.index');
     Route::get('/create', [App\Http\Controllers\RouteController::class, 'create'])->name('routes.create');
     Route::post('/', [App\Http\Controllers\RouteController::class, 'store'])->name('routes.store');
@@ -238,18 +242,18 @@ Route::match(['post', 'put'], '/profile/update', function (\Illuminate\Http\Requ
     $customer->save();
     return redirect()->route('profile.show')->with('success', 'Profile updated successfully!');
 })->name('profile.update');
-Route::get('/buses/{bus}/trackings', function($bus) {
+Route::get('/buses/{bus}/trackings', function ($bus) {
     $bus = \App\Models\Bus::findOrFail($bus);
     $trackings = $bus->trackings()->orderByDesc('started_at')->get();
     return view('buses.tracking-list', compact('bus', 'trackings'));
 })->name('buses.tracking.list');
-Route::get('/buses/{bus}/trackings/{tracking}', function($bus, $tracking) {
+Route::get('/buses/{bus}/trackings/{tracking}', function ($bus, $tracking) {
     $bus = \App\Models\Bus::findOrFail($bus);
     $tracking = $bus->trackings()->findOrFail($tracking);
     $locations = $tracking->locations()->orderBy('recorded_at')->get();
     return view('buses.tracking-view', compact('bus', 'tracking', 'locations'));
 })->name('buses.tracking.show');
-Route::delete('/buses/{bus}/trackings/{tracking}', function($bus, $tracking) {
+Route::delete('/buses/{bus}/trackings/{tracking}', function ($bus, $tracking) {
     $bus = \App\Models\Bus::findOrFail($bus);
     $tracking = $bus->trackings()->findOrFail($tracking);
     $tracking->locations()->delete();
@@ -262,4 +266,3 @@ Route::post('/bus/start-tracking', [App\Http\Controllers\Api\BusTrackingApiContr
 Route::post('/bus/end-tracking', [App\Http\Controllers\Api\BusTrackingApiController::class, 'endTracking'])->name('bus.end-tracking');
 
 Route::resource('subscriptions', SubscriptionController::class);
-
